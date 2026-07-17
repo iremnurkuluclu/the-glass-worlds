@@ -1,6 +1,8 @@
 import { motion } from 'framer-motion'
 import snowglobe from './assets/snowglobe.png'
 import snowglobeVideo from './assets/snowglobe.mp4'
+import mansionGlobe from './assets/mansion-globe.png'
+import workshopTable from './assets/workshop-table.png'
 import './App.css'
 function App() {
   return (
@@ -146,7 +148,7 @@ viewport={{ once: false, amount: 0.35 }}
 transition={{ duration: 0.75, ease: 'easeOut' }}
         >
           <h2>
-            Made in the <em>forest</em>
+            Make your own <em>world</em>
           </h2>
           <span>Guest creations · Winter 2026</span>
         </motion.div>
@@ -165,7 +167,7 @@ transition={{ duration: 0.75, ease: 'easeOut' }}
             whileHover={{ scale: 1.025 }}
             transition={{ type: 'spring', stiffness: 220, damping: 18 }}
           >
-            <img src={snowglobe} alt="Snow globe close up" />
+            <img src={mansionGlobe} alt="Mansion snow globe creation" />
           </motion.div>
 
           <motion.div
@@ -184,7 +186,7 @@ transition={{ duration: 0.75, ease: 'easeOut' }}
   whileHover={{ scale: 1.025 }}
   transition={{ type: 'spring', stiffness: 220, damping: 18 }}
 >
-  <img src={snowglobe} alt="Workshop table with a handmade globe" />
+  <img src={workshopTable} alt="Workshop table with a handmade globe" />
 </motion.div>        </div>
       </section>
       <section id="details" className="details-section">

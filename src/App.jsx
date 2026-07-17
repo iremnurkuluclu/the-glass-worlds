@@ -8,7 +8,7 @@ function App() {
       <nav className="navbar">
         <div className="brand">
           <span className="brand-icon">*</span>
-          <span>The Glass Forest</span>
+          <span>The Glass Worlds</span>
         </div>
 
         <div className="nav-links">
@@ -289,7 +289,7 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
 
       <footer className="footer">
         <div>
-          <strong>The Glass Forest</strong>
+          <strong>The Glass Worlds</strong>
           <p>Tiny worlds, made slowly and with wonder.</p>
         </div>
 
@@ -303,7 +303,7 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
 
         <div>
           <span>Contact</span>
-          <p>hello@theglassforest.studio</p>
+          <p>hello@theglassworlds.studio</p>
           <p>Instagram</p>
         </div>
       </footer>    </main>

@@ -48,7 +48,7 @@ Bu projede hayali bir kar küresi tasarım atölyesi tasarladım.Kışı ve orma
 - Process kartları sırayla ekrana geliyor.
 - Butonlarda hover ve tap animasyonları var.
 - Kullanıcı yorumları bölümleri scroll sırasında hareketli şekilde görünüyor.
-- Hareketli Kar Küresi
+- Hareketli Kar Küresi:
 Kar küresi görselindeki karların hareket etmesi için Kling AI ile kısa bir video oluşturdum. Bu videoyu hero bölümünde kullanarak sayfanın daha canlı ve atmosferik görünmesini sağladım.
 
 

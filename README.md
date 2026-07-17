@@ -1,20 +1,20 @@
- * The Glass Worlds
+ - The Glass Worlds
 
 The Glass Worlds, özel kar küresi atölyesini tanıtan tek sayfalık bir landing page projesidir. Sayfa; büyük hero alanı, süreç kartları, galeri, atölye detayları, kullanıcı yorumu bölümlerinden oluşur.
 
-* Canlı Site
+- Canlı Site
 
 https://the-glass-worlds.vercel.app
 
-* GitHub Repo
+- GitHub Repo
 
 https://github.com/iremnurkuluclu/the-glass-worlds
 
-* Konsept
+- Konsept
 
 Bu projede hayali bir kar küresi tasarım atölyesi tasarladım.Kışı ve ormanı çağrıştıran uyumlu renkler kullandım. Kullanıcılar sayfada atölyenin atmosferini, yapım sürecini, dahil olan hizmetleri ve etkinlik tarihlerini görebilir.
 
-*  Kullanılan Teknolojiler ve Araçlar
+- Kullanılan Teknolojiler ve Araçlar
 
 - React
 - Vite
@@ -26,7 +26,7 @@ Bu projede hayali bir kar küresi tasarım atölyesi tasarladım.Kışı ve orma
 - Codex
 - Kling AI 
 
-* Kullandığım Önemli Promptlar
+- Kullandığım Önemli Promptlar
 
 1.Create a modern web Hero section using these exact design specifications:
 
@@ -52,13 +52,13 @@ Bu projede hayali bir kar küresi tasarım atölyesi tasarladım.Kışı ve orma
 Kar küresi görselindeki karların hareket etmesi için Kling AI ile kısa bir video oluşturdum. Bu videoyu hero bölümünde kullanarak sayfanın daha canlı ve atmosferik görünmesini sağladım.
 
 
-* En Çok Zorlandığım Noktalar
+- En Çok Zorlandığım Noktalar
 
 - En çok zorlandığım kısım, Cursor ile referans tasarıma birebir yakın sonuç almak oldu. İlk denemelerimde renkler, boşluklar ve görsel oranları tam uyuşmadı. Bu yüzden sayfayı bölüm bölüm ilerleterek her parçayı ayrı kontrol ettim ve gerekli yerlerde daha net promptlar yazmaya çalışarak tasarımı referansa yaklaştırdım yine de istediğim sonuç ortaya çıkmadığı için başka araçlardan yardım aldım.
 - Vercel ve GitHub bağlantısını doğru şekilde kurmak.
 - Proje tamamlandıktan sonra GitHub repo adını ve Vercel canlı site alan adını değiştirmekte zorlandım.
 
-* Öğrendiklerim
+- Öğrendiklerim
 
 - Proje tamamlandıktan sonra GitHub repo adını ve Vercel canlı site alan adını değiştirmeyi öğrendim. Böylece projenin kod tarafındaki marka adıyla yayın linkinin daha tutarlı görünmesini sağladım.
 - Framer Motion ile temel animasyonları kullanmayı öğrendim.

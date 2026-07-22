@@ -1,15 +1,22 @@
 import { motion } from 'framer-motion'
-import snowglobe from './assets/snowglobe.png'
-import snowglobeVideo from './assets/snowglobe.mp4'
-import mansionGlobe from './assets/mansion-globe.png'
-import workshopTable from './assets/workshop-table.png'
 import './App.css'
+const snowglobe =
+  'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720794/snowglobe_laglkr.png'
+
+const workshopTable =
+  'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720781/workshop-table_aydwhd.png'
+
+const snowglobeVideo =
+  'https://res.cloudinary.com/nbjbftgp/video/upload/v1784720748/snowglobe_qmtput.mp4'
+
+const mansionGlobe =
+  'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720723/mansion-globe_ad7ubu.png'
 function App() {
   return (
     <main className="page">
       <nav className="navbar">
         <div className="brand">
-          <span className="brand-icon">*</span>
+          <span className="brand-icon">*</span>s
           <span>The Glass Worlds</span>
         </div>
 
@@ -311,5 +318,3 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
       </footer>    </main>
   )
 }
-
-export default App

@@ -318,3 +318,4 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
       </footer>    </main>
   )
 }
+export default App

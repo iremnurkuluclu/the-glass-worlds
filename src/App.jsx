@@ -1,4 +1,7 @@
+
+import { useState } from 'react'
 import { motion } from 'framer-motion'
+import { supabase } from './supabaseClient'
 import './App.css'
 const snowglobe =
   'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720794/snowglobe_laglkr.png'
@@ -12,6 +15,47 @@ const snowglobeVideo =
 const mansionGlobe =
   'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720723/mansion-globe_ad7ubu.png'
 function App() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    message: '',
+  })
+
+  const [formStatus, setFormStatus] = useState('')
+
+  const handleInputChange = (event) => {
+    const { name, value } = event.target
+
+    setFormData((currentData) => ({
+      ...currentData,
+      [name]: value,
+    }))
+  }
+
+  const handleFormSubmit = async (event) => {
+    event.preventDefault()
+    setFormStatus('Sending...')
+
+    const { error } = await supabase.from('messages').insert([
+      {
+        name: formData.name,
+        email: formData.email,
+        message: formData.message,
+      },
+    ])
+
+    if (error) {
+      setFormStatus('Something went wrong. Please try again.')
+      return
+    }
+
+    setFormStatus('Your message has been saved.')
+    setFormData({
+      name: '',
+      email: '',
+      message: '',
+    })
+  }
   return (
     <main className="page">
       <nav className="navbar">
@@ -366,7 +410,57 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
           </div>
         </motion.div>
       </section>
+<section className="contact-section" id="contact">
+  <motion.div
+    className="contact-card"
+    initial={{ opacity: 0, y: 70, scale: 0.96 }}
+    whileInView={{ opacity: 1, y: 0, scale: 1 }}
+    viewport={{ once: false, amount: 0.25 }}
+    transition={{ duration: 0.75, ease: 'easeOut' }}
+  >
+    <div className="contact-copy">
+      <span>Send us a note</span>
+      <h2>
+        Plan your own <em>glass world.</em>
+      </h2>
+      <p>
+        Tell us who you are, when you would like to visit, or what kind of snow globe you dream of making.
+      </p>
+    </div>
 
+    <form className="contact-form" onSubmit={handleFormSubmit}>
+      <input
+        type="text"
+        name="name"
+        placeholder="Your name"
+        value={formData.name}
+        onChange={handleInputChange}
+        required
+      />
+
+      <input
+        type="email"
+        name="email"
+        placeholder="Your email"
+        value={formData.email}
+        onChange={handleInputChange}
+        required
+      />
+
+      <textarea
+        name="message"
+        placeholder="Your message"
+        value={formData.message}
+        onChange={handleInputChange}
+        required
+      />
+
+      <button type="submit">Send message</button>
+
+      {formStatus && <p className="form-status">{formStatus}</p>}
+    </form>
+  </motion.div>
+</section>
       <footer className="footer">
         <div>
           <strong>The Glass Worlds</strong>
@@ -386,8 +480,8 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
           <p>hello@theglassworlds.studio</p>
           <p>Instagram</p>
         </div>
-      </footer>  
- </main>
+      </footer>
+</main>
   )
 }
 export default App

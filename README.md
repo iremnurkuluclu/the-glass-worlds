@@ -63,3 +63,13 @@ Kar küresi görselindeki karların hareket etmesi için Kling AI ile kısa bir 
 - Proje tamamlandıktan sonra GitHub repo adını ve Vercel canlı site alan adını değiştirmeyi öğrendim. Böylece projenin kod tarafındaki marka adıyla yayın linkinin daha tutarlı görünmesini sağladım.
 - Framer Motion ile temel animasyonları kullanmayı öğrendim.
 - GitHub üzerinden proje yayınlayıp Vercel ile canlıya almayı öğrendim.
+   
+- Case 2 - Infinity Loop Animation
+
+- https://dribbble.com/shots/23334168-OKOO-SNOW - Bu referansı seçtim çünkü kar animasyonu akıcı şekilde tekrar ediyor ve kullanıcıyı rahatsız etmiyor. Küçük tekrar eden hareketlerin sayfayı daha canlı gösterebileceğini anlamama yardımcı oldu.
+- https://dribbble.com/shots/23945556--S-loop-animation-for-Scribe - Bu referans, sade ve minimal olsa bile bir loop animasyonun etkili olabileceğini fark etmemi sağladı.
+- https://lottiefiles.com/free-animation/infinity-loader-5S0tGTfa8x -  Animasyon akıcı şekilde tekrar ediyor ve bitiş tekrar başlangıçla  bağlandığında hareket daha akıcı gözüküyor , mantığı daha iyi anlamama yardımcı oldu.
+
+- Transition Ayarları
+
+- Hareketin hızlı ve dikkat dağıtıcı olmaması için daha uzun bir duration seçtim.Animasyon durmadan devam etsin diye repeat: Infinity kullandım ve hız sabit kalsın ve döngü kesintisiz olsun diye ease: "linear" kullandım.Bu transition ayarları sitenin sakin kış atmosferiyle uyumlu olduğu için animasyon daha doğal oldu.

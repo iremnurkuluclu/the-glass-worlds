@@ -15,12 +15,83 @@ function App() {
   return (
     <main className="page">
       <nav className="navbar">
-        <div className="brand">
-          <span className="brand-icon">*</span>
-          <span>The Glass Worlds</span>
-        </div>
+<div className="brand">
+<motion.div
+  style={{
+    width: '46px',
+    height: '50px',
+    minWidth: '46px',
+    position: 'relative',
+    display: 'inline-block',
+    marginRight: '10px',
+  }}
+>  
+    <div
+      style={{
+        width: '40px',
+        height: '35px',
+        margin: '0 auto',
+        borderRadius: '50%',
+        border: '2px solid white',
+        background: 'linear-gradient(180deg, #dff5ff, #77a5bd)',
+        boxShadow: 'inset 0 -7px 10px rgba(5, 28, 54, 0.25)',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+<motion.div
+  style={{
+    position: 'absolute',
+    inset: '5px',
+    borderRadius: '50%',
+  }}
+  animate={{ rotate: 360 }}
+  transition={{
+    repeat: Infinity,
+    duration: 2.8,
+    ease: 'linear',
+  }}
+>
+  {[
+    { top: '2px', left: '8px', size: '8px' },
+    { top: '7px', right: '5px', size: '7px' },
+    { top: '14px', left: '18px', size: '8px' },
+    { bottom: '5px', left: '9px', size: '7px' },
+    { bottom: '3px', right: '8px', size: '6px' },
+  ].map((flake, index) => (
+    <span
+      key={index}
+      style={{
+        position: 'absolute',
+        ...flake,
+        color: 'white',
+        fontSize: flake.size,
+        lineHeight: 1,
+        fontWeight: 700,
+      }}
+    >
+     {'*'}
+    </span>
+  ))}
+</motion.div>
+   
 
-        <div className="nav-links">
+</div>
+
+    <div
+      style={{
+        width: '30px',
+        height: '8px',
+        margin: '-2px auto 0',
+        borderRadius: '4px 4px 8px 8px',
+        background: 'linear-gradient(135deg, #a8663d, #4f2a1a)',
+      }}
+    />
+  </motion.div>
+
+  <span>The Glass Worlds</span>
+</div>
+<div className="nav-links">
           <a href="#process">The process</a>
           <a href="#gallery">Gallery</a>
           <a href="#details">Workshop details</a>
@@ -315,7 +386,8 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
           <p>hello@theglassworlds.studio</p>
           <p>Instagram</p>
         </div>
-      </footer>    </main>
+      </footer>  
+ </main>
   )
 }
 export default App

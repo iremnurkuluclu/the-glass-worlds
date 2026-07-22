@@ -16,7 +16,7 @@ function App() {
     <main className="page">
       <nav className="navbar">
         <div className="brand">
-          <span className="brand-icon">*</span>s
+          <span className="brand-icon">*</span>
           <span>The Glass Worlds</span>
         </div>
 

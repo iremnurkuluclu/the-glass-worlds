@@ -73,3 +73,13 @@ Kar küresi görselindeki karların hareket etmesi için Kling AI ile kısa bir 
 - Transition Ayarları
 
 - Hareketin hızlı ve dikkat dağıtıcı olmaması için daha uzun bir duration seçtim.Animasyon durmadan devam etsin diye repeat: Infinity kullandım ve hız sabit kalsın ve döngü kesintisiz olsun diye ease: "linear" kullandım.Bu transition ayarları sitenin sakin kış atmosferiyle uyumlu olduğu için animasyon daha doğal oldu.
+
+-  Case 3 - Supabase ile Backend Kurulumu
+
+-Bu projede Supabase ile backend bağlantısı ekleme amacım, kullanıcıların iletişim formuna yazdığı bilgilerin bir veritabanına kaydedilmesini sağlamaktı.Bu sayede sadece görsel bir sayfa olarak kalmadı.
+-Supabase’e github ile girdim ve `the-glass-worlds` projesini oluşturdum. Ardından `messages` tablosunu açıp formdan gelen `name`, `email`, `message` ve `created_at` bilgilerini burada sakladım.![Supabase messages tablo yapısı](./Supabase-Messages-Table.png)
+-React projesine Supabase bağlantısı eklemek için `@supabase/supabase-js` kullandım. Bağlantı kodlarını github'ta src kısmını açıp `supabaseClient.js` adında yeni dosya kurup içinde topladım. Supabase URL ve key bilgilerini ise güvenlik için `.env` dosyasında sakladım.![Supabase client dosyası](./Supabase-Client.png)
+-Canlı sitede de formun çalışması için aynı environment variable değerlerini Vercel’e ekledim. Böylece site Vercel’de yayınlandığında da Supabase veritabanına bağlanabildi.![Supabase Data API ekranı](./Supabase-Data-API.png)
+Formu Supabase’teki `messages` tablosuna bağladım. Test sonucunda gönderilen bilgilerin tabloya kaydedildiğini gördüm.![Supabase form test ekranı](./Supabase-Form-Test.png) ![Supabase messages kayıtları](./Supabase-Messages-Records.png)
+
+

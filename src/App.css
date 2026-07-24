@@ -1150,4 +1150,127 @@ margin: 80px auto 0;
     grid-template-columns: 1fr;
   }
 }
+.auth-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
 
+.auth-link {
+  border: 0;
+  background: transparent;
+  color: #082247;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.welcome-text {
+  color: #082247;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgba(8, 34, 71, 0.45);
+  padding: 24px;
+}
+
+.auth-card {
+  position: relative;
+  width: min(420px, 100%);
+  display: grid;
+  gap: 14px;
+  background: #e9f6fb;
+  border-radius: 18px;
+  padding: 32px;
+  box-shadow: 0 24px 80px rgba(8, 34, 71, 0.28);
+}
+
+.auth-card span {
+  color: #e5b43b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.auth-card h2 {
+  margin: 0;
+  color: #082247;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 38px;
+}
+
+.auth-card input {
+  width: 100%;
+  border: 1px solid rgba(8, 34, 71, 0.16);
+  border-radius: 14px;
+  background: #fff;
+  color: #082247;
+  padding: 14px 16px;
+  font: inherit;
+}
+
+.auth-card button[type='submit'] {
+  border: 0;
+  border-radius: 999px;
+  background: #ef332b;
+  color: #fff;
+  padding: 14px 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.auth-card p {
+  margin: 0;
+  color: #082247;
+  font-weight: 800;
+}
+
+.auth-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: #082247;
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+   transform: translateY(-1px);
+
+}
+
+@media (max-width: 760px) {
+  .auth-actions {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .welcome-text {
+    width: 100%;
+    text-align: center;
+  }
+}
+.language-toggle {
+  border: 1px solid rgba(8, 34, 71, 0.16);
+  border-radius: 999px;
+  background: #fff;
+  color: #082247;
+  padding: 8px 10px;
+  font-weight: 900;
+  cursor: pointer;
+}
+.auth-close-icon {
+  display: block;
+  transform: translateY(-1px);
+}

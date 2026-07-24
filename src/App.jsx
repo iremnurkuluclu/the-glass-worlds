@@ -1,5 +1,5 @@
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { supabase } from './supabaseClient'
 import './App.css'
@@ -22,6 +22,17 @@ function App() {
   })
 
   const [formStatus, setFormStatus] = useState('')
+const [session, setSession] = useState(null)
+
+const [authMode, setAuthMode] = useState('')
+
+const [authData, setAuthData] = useState({
+  email: '',
+  password: '',
+})
+
+const [authMessage, setAuthMessage] = useState('')
+const [authLanguage, setAuthLanguage] = useState('en')
 
   const handleInputChange = (event) => {
     const { name, value } = event.target
@@ -56,6 +67,93 @@ function App() {
       message: '',
     })
   }
+useEffect(() => {
+  supabase.auth.getSession().then(({ data }) => {
+    setSession(data.session)
+  })
+
+  const {
+    data: { subscription },
+  } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    setSession(newSession)
+  })
+
+  return () => subscription.unsubscribe()
+}, [])
+
+const handleAuthInputChange = (event) => {
+  const { name, value } = event.target
+
+  setAuthData((currentData) => ({
+    ...currentData,
+    [name]: value,
+  }))
+}
+
+const handleSignUp = async (event) => {
+  event.preventDefault()
+ setAuthMessage(authLanguage === 'tr' ? 'Hesap oluşturuluyor...' : 'Creating your account...')
+
+  const { error } = await supabase.auth.signUp({
+    email: authData.email,
+    password: authData.password,
+  })
+
+  if (error) {
+    setAuthMessage('Could not create your account. Please check your details.')
+    return
+  }
+
+  setAuthMessage('Account created. You can now log in.')
+}
+
+const handleSignIn = async (event) => {
+  event.preventDefault()
+ setAuthMessage(authLanguage === 'tr' ? 'Giriş yapılıyor...' : 'Logging in...')
+
+  const { error } = await supabase.auth.signInWithPassword({
+    email: authData.email,
+    password: authData.password,
+  })
+
+  if (error) {
+    setAuthMessage('Could not log in. Email or password may be wrong.')
+    return
+  }
+
+  setAuthMessage('')
+  setAuthMode('')
+}
+
+const handleSignOut = async () => {
+  await supabase.auth.signOut()
+  setAuthMessage('')
+  setAuthMode('')
+}
+const authText = {
+  en: {
+    login: 'Log in',
+    signup: 'Sign up',
+    logout: 'log out',
+    welcome: 'Welcome',
+    member: 'Member access',
+    email: 'Email',
+    password: 'Password',
+    switch: 'TR',
+  },
+  tr: {
+     login: 'Giriş Yap',
+     signup: 'Kayıt Ol',
+    logout: 'Çıkış',
+    welcome: 'Hoş geldin',
+    member: 'Üye girişi',
+    email: 'E-posta',
+    password: 'Şifre',
+    switch: 'EN',
+  },
+}
+
+const t = authText[authLanguage]
   return (
     <main className="page">
       <nav className="navbar">
@@ -141,14 +239,102 @@ function App() {
           <a href="#details">Workshop details</a>
         </div>
 
-        <motion.button
-          className="book-button"
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.96 }}
-        >
-          Book a seat
-        </motion.button>
+        <div className="auth-actions">
+<button
+  className="language-toggle"
+  type="button"
+  onClick={() => setAuthLanguage(authLanguage === 'en' ? 'tr' : 'en')}
+>
+  {t.switch}
+</button>
+  {session ? (
+    <>
+      <span className="welcome-text">{t.welcome}, {session.user.email}</span>
+      <motion.button
+        className="book-button"
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.96 }}
+        onClick={handleSignOut}
+      >
+{t.logout}
+      </motion.button>
+    </>
+  ) : (
+    <>
+      <motion.button
+        className="auth-link"
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.96 }}
+        onClick={() => setAuthMode('login')}
+      >
+      {t.login}
+      </motion.button>
+
+      <motion.button
+        className="book-button"
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.96 }}
+        onClick={() => setAuthMode('register')}
+      >
+       {t.signup}
+      </motion.button>
+    </>
+  )}
+</div>
       </nav>
+{authMode && (
+  <motion.div
+    className="auth-overlay"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+  >
+    <motion.form
+      className="auth-card"
+      onSubmit={authMode === 'login' ? handleSignIn : handleSignUp}
+      initial={{ opacity: 0, y: 24, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+    >
+      <button
+        className="auth-close"
+        type="button"
+        onClick={() => {
+          setAuthMode('')
+          setAuthMessage('')
+        }}
+      >
+       <span className="auth-close-icon">x</span>
+      </button>
+
+      <span>{t.member}</span>
+     <h2>{authMode === 'login' ? t.login : t.signup}</h2>
+
+      <input
+        type="email"
+        name="email"
+        placeholder={t.email}
+        value={authData.email}
+        onChange={handleAuthInputChange}
+        required
+      />
+
+      <input
+        type="password"
+        name="password"
+        placeholder={t.password}
+        value={authData.password}
+        onChange={handleAuthInputChange}
+        required
+      />
+
+      <button type="submit">
+       {authMode === 'login' ? t.login : t.signup}
+      </button>
+
+      {authMessage && <p>{authMessage}</p>}
+    </motion.form>
+  </motion.div>
+)}
 
       <section className="hero">
         <motion.div

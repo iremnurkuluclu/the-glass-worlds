@@ -82,4 +82,25 @@ Kar küresi görselindeki karların hareket etmesi için Kling AI ile kısa bir 
 -Canlı sitede de formun çalışması için aynı environment variable değerlerini Vercel’e ekledim. Böylece site Vercel’de yayınlandığında da Supabase veritabanına bağlanabildi.![Supabase Data API ekranı](./Supabase-Data-API.png)
 Formu Supabase’teki `messages` tablosuna bağladım. Test sonucunda gönderilen bilgilerin tabloya kaydedildiğini gördüm.![Supabase form test ekranı](./Supabase-Form-Test.png) ![Supabase messages kayıtları](./Supabase-Messages-Records.png)
 
+ - Case 4 - Login / Register Ekleme
+
+- Amaç, siteye Supabase Auth ile gerçek bir üyelik sistemi kazandırmaktı. Kullanıcılar artık e-posta ve şifreyle kayıt olup giriş yapabiliyor.
+- Navbar'a "Giriş Yap" ve "Kayıt Ol" butonları ekledim, bu butonlar tıklanınca Framer Motion ile scale, fade animasyonuyla açılan bir form penceresi  gösteriyor.
+- Arka planda `supabase.auth.signUp`, `supabase.auth.signInWithPassword` ve `supabase.auth.signOut` fonksiyonlarını kullandım.
+- Kullanıcı giriş yaptığında navbar otomatik değişip "Hoş geldin, [e-posta]" yazısı ve bir "Çıkış" butonu gösteriyor; hatalı şifre gibi durumlarda kullanıcıya anlaşılır Türkçe/İngilizce hata mesajları gösterdim.
+- Siteye ayrıca TR/EN dil değişimi ekledim; auth formundaki ve navbar'daki tüm metinler seçilen dile göre değişiyor.
+- En çok zorlandığım nokta, oturum durumunun (session) sayfa yenilendiğinde kaybolmaması için `supabase.auth.getSession()` ve `onAuthStateChange` dinleyicisini doğru kurgulamaktı.
+- Bu case'te Supabase Auth'un temel akışını (signUp/signIn/signOut, session yönetimi) ve kullanıcı durumuna göre arayüzü koşullu olarak değiştirmeyi öğrendim.
+
+- Case 5 - Kullanıcı Paneli
+
+- Amaç, giriş yapan her kullanıcının kendine ait, korumalı bir `/panel` sayfasına sahip olmasıydı — bu case, önceki tüm case'leri (landing page, animasyonlar, backend, auth) tek bir panelde birleştiren final aşaması.
+- `profiles` adında yeni bir tablo oluşturdum (`id`, `full_name`, `avatar_url`, `created_at`, `updated_at`) ve Row Level Security policy'leri ekledim: her kullanıcı sadece kendi satırını görebiliyor, ekleyebiliyor ve güncelleyebiliyor (`auth.uid() = id`).
+- Korumalı route: `react-router-dom` kurup projeyi gerçek bir router yapısına geçirdim. Panel artık gerçek bir `/panel` adresi; giriş yapmamış biri bu adrese gitmeye çalışırsa (ya da oturumu kapatırsa) otomatik olarak ana sayfaya yönlendiriliyor.
+- Panel içeriği: kullanıcının e-postası ve adı, ad-soyad güncelleme formu, Supabase Storage üzerinden fotoğraf yükleyip kaydedebildiği bir avatar alanı, Case 3'teki `messages` tablosuna kendi gönderdiği mesajların listesi ve bir çıkış butonu.
+- Avatar yükleme için `avatars` adında herkese açık (public) bir Storage bucket oluşturdum; sadece giriş yapan kullanıcının kendi klasörüne (`{user_id}/avatar.uzantı`) dosya yükleyip güncelleyebilmesi için storage.objects üzerinde INSERT/UPDATE/SELECT policy'leri ekledim.
+- `messages` tablosuna da RLS ekledim: herkes (giriş yapmadan) mesaj gönderebiliyor, ama sadece giriş yapmış kullanıcı kendi e-postasıyla gönderdiği mesajları panelde görebiliyor.
+- Framer Motion animasyonları: panel ile ana sayfa arasında geçişte fade+kayma animasyonu (AnimatePresence), panel açıldığında profil ve mesaj kartlarının sırayla (staggered) belirmesi, mesaj listesinin tek tek kayarak gelmesi, tüm butonlarda hover/tap animasyonları.
+- En çok zorlandığım noktalar: Storage ve tablo RLS policy'lerini doğru yazmak (`storage.foldername`, `auth.uid()` eşleştirmesi), bir sütunu yanlış isimle kaydedip (`updated_at yaz`) bunu SQL Editor ile `ALTER TABLE ... RENAME COLUMN` diyerek düzeltmek, PostgREST'in şema önbelleğini `NOTIFY pgrst, 'reload schema'` ile yenilemeyi öğrenmek, ve Vercel'e deploy ederken `react-router-dom`'u `package.json`'a eklemeyi unutup build'in kırılmasını çözmek.
+- Öğrendiklerim: Row Level Security mantığını uçtan uca kurmayı (tablo + storage), React Router ile korumalı sayfa (protected route) kavramını, Supabase Storage'da dosya yükleme akışını, PostgREST şema önbelleği kavramını ve Vercel build hatalarını log okuyarak teşhis etmeyi öğrendim.
 

@@ -1,6 +1,7 @@
 
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import './App.css'
 const snowglobe =
@@ -20,9 +21,15 @@ function App() {
     email: '',
     message: '',
   })
-
+const location = useLocation()
+const navigate = useNavigate()
+const isPanelRoute = location.pathname === '/panel'
+const [profileData, setProfileData] = useState({ full_name: '', avatar_url: '' })
+const [profileStatus, setProfileStatus] = useState('')
+const [userMessages, setUserMessages] = useState([])
   const [formStatus, setFormStatus] = useState('')
 const [session, setSession] = useState(null)
+const [sessionChecked, setSessionChecked] = useState(false)
 
 const [authMode, setAuthMode] = useState('')
 
@@ -34,6 +41,32 @@ const [authData, setAuthData] = useState({
 const [authMessage, setAuthMessage] = useState('')
 const [authLanguage, setAuthLanguage] = useState('en')
 
+const loadPanelData = async (currentSession) => {
+  if (!currentSession) return
+
+  const user = currentSession.user
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('full_name, avatar_url')
+    .eq('id', user.id)
+    .maybeSingle()
+
+  if (profile) {
+    setProfileData({
+      full_name: profile.full_name || '',
+      avatar_url: profile.avatar_url || '',
+    })
+  }
+
+  const { data: messages } = await supabase
+    .from('messages')
+    .select('name, email, message, created_at')
+    .eq('email', user.email)
+    .order('created_at', { ascending: false })
+
+  setUserMessages(messages || [])
+}
   const handleInputChange = (event) => {
     const { name, value } = event.target
 
@@ -70,16 +103,113 @@ const [authLanguage, setAuthLanguage] = useState('en')
 useEffect(() => {
   supabase.auth.getSession().then(({ data }) => {
     setSession(data.session)
+    setSessionChecked(true)
   })
 
   const {
     data: { subscription },
   } = supabase.auth.onAuthStateChange((_event, newSession) => {
     setSession(newSession)
+    setSessionChecked(true)
   })
 
   return () => subscription.unsubscribe()
 }, [])
+
+useEffect(() => {
+  if (session) {
+    loadPanelData(session)
+  } else {
+    setProfileData({ full_name: '', avatar_url: '' })
+    setUserMessages([])
+  }
+}, [session])
+
+useEffect(() => {
+  if (sessionChecked && isPanelRoute && !session) {
+    navigate('/', { replace: true })
+  }
+}, [sessionChecked, isPanelRoute, session, navigate])
+
+const handleProfileInputChange = (event) => {
+  const { name, value } = event.target
+
+  setProfileData((currentData) => ({
+    ...currentData,
+    [name]: value,
+  }))
+}
+
+const handleProfileUpdate = async (event) => {
+  event.preventDefault()
+  if (!session) return
+
+  setProfileStatus(authLanguage === 'tr' ? 'Kaydediliyor...' : 'Saving...')
+
+  const { error } = await supabase.from('profiles').upsert({
+    id: session.user.id,
+    full_name: profileData.full_name,
+    avatar_url: profileData.avatar_url,
+    updated_at: new Date().toISOString(),
+  })
+
+  if (error) {
+    console.error('Profile update error:', error)
+    setProfileStatus(
+      authLanguage === 'tr' ? 'Bir hata oluştu, tekrar deneyin.' : 'Something went wrong. Please try again.'
+    )
+    return
+  }
+
+  setProfileStatus(authLanguage === 'tr' ? 'Profil güncellendi.' : 'Profile updated.')
+}
+
+const handleAvatarUpload = async (event) => {
+  const file = event.target.files && event.target.files[0]
+  if (!file || !session) return
+
+  setProfileStatus(authLanguage === 'tr' ? 'Fotoğraf yükleniyor...' : 'Uploading photo...')
+
+  const fileExt = file.name.split('.').pop()
+  const filePath = `${session.user.id}/avatar.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, file, { upsert: true })
+
+  if (uploadError) {
+    console.error('Avatar upload error:', uploadError)
+    setProfileStatus(
+      authLanguage === 'tr' ? 'Fotoğraf yüklenemedi. Tekrar deneyin.' : 'Could not upload photo. Please try again.'
+    )
+    return
+  }
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
+  const publicUrl = `${data.publicUrl}?t=${Date.now()}`
+
+  setProfileData((currentData) => ({
+    ...currentData,
+    avatar_url: publicUrl,
+  }))
+
+  const { error: dbError } = await supabase.from('profiles').upsert({
+    id: session.user.id,
+    full_name: profileData.full_name,
+    avatar_url: publicUrl,
+    updated_at: new Date().toISOString(),
+  })
+
+  if (dbError) {
+    console.error('Profile save error:', dbError)
+    setProfileStatus(
+      authLanguage === 'tr' ? 'Fotoğraf yüklendi ama kaydedilemedi.' : 'Photo uploaded but could not be saved.'
+    )
+    return
+  }
+
+  setProfileStatus(authLanguage === 'tr' ? 'Fotoğraf güncellendi.' : 'Photo updated.')
+}
 
 const handleAuthInputChange = (event) => {
   const { name, value } = event.target
@@ -140,6 +270,16 @@ const authText = {
     email: 'Email',
     password: 'Password',
     switch: 'TR',
+    myPanel: 'My panel',
+    panelTitle: 'Your panel',
+    profileSection: 'Profile',
+    fullName: 'Full name',
+    avatarUrl: 'Avatar URL',
+    changePhoto: 'Change photo',
+    save: 'Save changes',
+    messagesSection: 'Your messages',
+    noMessages: "You haven't sent a message yet.",
+    back: 'Back to site',
   },
   tr: {
      login: 'Giriş Yap',
@@ -150,6 +290,16 @@ const authText = {
     email: 'E-posta',
     password: 'Şifre',
     switch: 'EN',
+    myPanel: 'Panelim',
+    panelTitle: 'Panelin',
+    profileSection: 'Profil',
+    fullName: 'Ad Soyad',
+    avatarUrl: 'Avatar URL',
+    changePhoto: 'Fotoğrafı değiştir',
+    save: 'Değişiklikleri kaydet',
+    messagesSection: 'Mesajların',
+    noMessages: 'Henüz mesaj göndermedin.',
+    back: 'Siteye dön',
   },
 }
 
@@ -233,11 +383,13 @@ const t = authText[authLanguage]
 
   <span>The Glass Worlds</span>
 </div>
+{!isPanelRoute && (
 <div className="nav-links">
           <a href="#process">The process</a>
           <a href="#gallery">Gallery</a>
           <a href="#details">Workshop details</a>
         </div>
+)}
 
         <div className="auth-actions">
 <button
@@ -257,6 +409,14 @@ const t = authText[authLanguage]
         onClick={handleSignOut}
       >
 {t.logout}
+      </motion.button>
+      <motion.button
+        className="auth-link panel-toggle"
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.96 }}
+        onClick={() => navigate(isPanelRoute ? '/' : '/panel')}
+      >
+{t.myPanel}
       </motion.button>
     </>
   ) : (
@@ -336,6 +496,134 @@ const t = authText[authLanguage]
   </motion.div>
 )}
 
+<AnimatePresence mode="wait">
+{isPanelRoute && session ? (
+  <motion.section
+    key="panel"
+    className="panel-section"
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -16 }}
+    transition={{ duration: 0.35, ease: 'easeOut' }}
+  >
+    <motion.div
+      className="panel-card"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
+    >
+      <div className="panel-header">
+        <div>
+          <span>{t.member}</span>
+          <h2>{t.panelTitle}</h2>
+        </div>
+        <motion.button
+          className="panel-back"
+          type="button"
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => navigate('/')}
+        >
+          {t.back}
+        </motion.button>
+      </div>
+
+      <motion.div
+        className="panel-grid"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.12, delayChildren: 0.2 } },
+        }}
+      >
+        <motion.form
+          className="panel-profile"
+          onSubmit={handleProfileUpdate}
+          variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+        >
+          <h3>{t.profileSection}</h3>
+
+          <div className="avatar-upload">
+            <div className="avatar-preview">
+              {profileData.avatar_url ? (
+                <img src={profileData.avatar_url} alt="Avatar" />
+              ) : (
+                <span>{(session.user.email || '?')[0].toUpperCase()}</span>
+              )}
+            </div>
+            <label className="avatar-upload-button">
+              {t.changePhoto}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                hidden
+              />
+            </label>
+          </div>
+
+          <input
+            type="text"
+            name="full_name"
+            placeholder={t.fullName}
+            value={profileData.full_name}
+            onChange={handleProfileInputChange}
+          />
+
+          <motion.button
+            type="submit"
+            whileHover={{ scale: 1.06 }}
+            whileTap={{ scale: 0.96 }}
+          >
+            {t.save}
+          </motion.button>
+
+          {profileStatus && <p className="panel-status">{profileStatus}</p>}
+        </motion.form>
+
+        <motion.div
+          className="panel-messages"
+          variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+        >
+          <h3>{t.messagesSection}</h3>
+
+          {userMessages.length === 0 ? (
+            <p className="panel-empty">{t.noMessages}</p>
+          ) : (
+            <motion.ul
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.08, delayChildren: 0.35 } },
+              }}
+            >
+              {userMessages.map((msg, index) => (
+                <motion.li
+                  key={index}
+                  variants={{ hidden: { opacity: 0, x: 12 }, visible: { opacity: 1, x: 0 } }}
+                  whileHover={{ scale: 1.02, backgroundColor: 'rgba(170, 59, 255, 0.06)' }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                >
+                  <strong>{new Date(msg.created_at).toLocaleDateString()}</strong>
+                  <p>{msg.message}</p>
+                </motion.li>
+              ))}
+            </motion.ul>
+          )}
+        </motion.div>
+      </motion.div>
+    </motion.div>
+  </motion.section>
+) : (
+  <motion.div
+    key="landing"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+    exit={{ opacity: 0 }}
+    transition={{ duration: 0.3 }}
+  >
       <section className="hero">
         <motion.div
           className="hero-copy card"
@@ -667,6 +955,9 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
           <p>Instagram</p>
         </div>
       </footer>
+  </motion.div>
+)}
+</AnimatePresence>
 </main>
   )
 }

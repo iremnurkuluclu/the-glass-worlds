@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
+import Shop from './Shop.jsx'
 import './App.css'
 const snowglobe =
   'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720794/snowglobe_laglkr.png'
@@ -24,6 +25,7 @@ function App() {
 const location = useLocation()
 const navigate = useNavigate()
 const isPanelRoute = location.pathname === '/panel'
+const isShopRoute = location.pathname === '/shop'
 const [profileData, setProfileData] = useState({ full_name: '', avatar_url: '' })
 const [profileStatus, setProfileStatus] = useState('')
 const [userMessages, setUserMessages] = useState([])
@@ -129,10 +131,10 @@ useEffect(() => {
 }, [session])
 
 useEffect(() => {
-  if (sessionChecked && isPanelRoute && !session) {
+  if (sessionChecked && (isPanelRoute || isShopRoute) && !session) {
     navigate('/', { replace: true })
   }
-}, [sessionChecked, isPanelRoute, session, navigate])
+}, [sessionChecked, isPanelRoute, isShopRoute, session, navigate])
 
 const handleProfileInputChange = (event) => {
   const { name, value } = event.target
@@ -653,7 +655,7 @@ const t = authText[authLanguage]
 
   <span>The Glass Worlds</span>
 </div>
-{!isPanelRoute && (
+{!isPanelRoute && !isShopRoute && (
 <div className="nav-links">
           <a href="#process">{t.navProcess}</a>
           <a href="#gallery">{t.navGallery}</a>
@@ -689,6 +691,14 @@ const t = authText[authLanguage]
         onClick={() => navigate(isPanelRoute ? '/' : '/panel')}
       >
 {t.myPanel}
+      </motion.button>
+      <motion.button
+        className="auth-link panel-toggle"
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.96 }}
+        onClick={() => navigate(isShopRoute ? '/' : '/shop')}
+      >
+        {authLanguage === 'tr' ? 'Mağaza' : 'Shop'}
       </motion.button>
     </>
   ) : (
@@ -928,7 +938,17 @@ const t = authText[authLanguage]
 )}
 
 <AnimatePresence mode="wait">
-{isPanelRoute && session ? (
+{isShopRoute && session ? (
+  <motion.div
+    key="shop"
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -16 }}
+    transition={{ duration: 0.35, ease: 'easeOut' }}
+  >
+    <Shop session={session} language={authLanguage} onBack={() => navigate('/')} />
+  </motion.div>
+) : isPanelRoute && session ? (
   <motion.section
     key="panel"
     className="panel-section"

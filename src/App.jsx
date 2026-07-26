@@ -673,7 +673,7 @@ const t = authText[authLanguage]
         <div className="auth-actions">
   {session ? (
     <>
-      <span className="welcome-text">{t.welcome}, {session.user.email}</span>
+      <span className="welcome-text">{t.welcome}, {profileData.full_name || session.user.email.split('@')[0]}</span>
       <motion.button
         className="book-button"
         whileHover={{ scale: 1.06 }}

@@ -179,6 +179,23 @@ h1 {
   cursor: pointer;
 }
 
+.mini-language-toggle {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(8, 34, 71, 0.18);
+  background: #fff;
+  color: #082247;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.mini-language-toggle:hover {
+  background: #f4f3ec;
+}
+
 .hero-visual {
   position: relative;
   min-height: 382px;
@@ -1252,6 +1269,27 @@ margin: 80px auto 0;
   margin: 0;
   color: #082247;
   font-weight: 800;
+}
+
+.auth-hint {
+  font-weight: 500 !important;
+  font-size: 13px;
+  color: rgba(8, 34, 71, 0.7) !important;
+}
+
+.auth-link-button {
+  border: 0;
+  background: transparent;
+  color: #aa3bff;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.auth-link-button:hover {
+  opacity: 0.8;
 }
 
 .auth-close {

@@ -38,6 +38,9 @@ const [authData, setAuthData] = useState({
   password: '',
 })
 
+const [otpCode, setOtpCode] = useState('')
+const [newPassword, setNewPassword] = useState('')
+
 const [authMessage, setAuthMessage] = useState('')
 const [authLanguage, setAuthLanguage] = useState('en')
 
@@ -78,7 +81,7 @@ const loadPanelData = async (currentSession) => {
 
   const handleFormSubmit = async (event) => {
     event.preventDefault()
-    setFormStatus('Sending...')
+    setFormStatus(t.sending)
 
     const { error } = await supabase.from('messages').insert([
       {
@@ -89,11 +92,11 @@ const loadPanelData = async (currentSession) => {
     ])
 
     if (error) {
-      setFormStatus('Something went wrong. Please try again.')
+      setFormStatus(t.formError)
       return
     }
 
-    setFormStatus('Your message has been saved.')
+    setFormStatus(t.formSuccess)
     setFormData({
       name: '',
       email: '',
@@ -230,11 +233,98 @@ const handleSignUp = async (event) => {
   })
 
   if (error) {
-    setAuthMessage('Could not create your account. Please check your details.')
+    setAuthMessage(
+      authLanguage === 'tr'
+        ? 'Hesap oluşturulamadı. Bilgilerini kontrol et.'
+        : 'Could not create your account. Please check your details.'
+    )
     return
   }
 
-  setAuthMessage('Account created. You can now log in.')
+  setAuthMessage(
+    authLanguage === 'tr'
+      ? 'E-postana 6 haneli bir kod gönderdik.'
+      : "We've sent a 6-digit code to your email."
+  )
+  setOtpCode('')
+  setAuthMode('verify')
+}
+
+const handleVerifySignup = async (event) => {
+  event.preventDefault()
+  setAuthMessage(authLanguage === 'tr' ? 'Doğrulanıyor...' : 'Verifying...')
+
+  const { error } = await supabase.auth.verifyOtp({
+    email: authData.email,
+    token: otpCode,
+    type: 'signup',
+  })
+
+  if (error) {
+    setAuthMessage(
+      authLanguage === 'tr' ? 'Kod hatalı ya da süresi dolmuş.' : 'That code is wrong or has expired.'
+    )
+    return
+  }
+
+  setAuthMessage('')
+  setOtpCode('')
+  setAuthMode('')
+}
+
+const handleForgotPassword = async (event) => {
+  event.preventDefault()
+  setAuthMessage(authLanguage === 'tr' ? 'Kod gönderiliyor...' : 'Sending code...')
+
+  const { error } = await supabase.auth.resetPasswordForEmail(authData.email)
+
+  if (error) {
+    setAuthMessage(
+      authLanguage === 'tr' ? 'Kod gönderilemedi. E-postanı kontrol et.' : 'Could not send the code. Check your email.'
+    )
+    return
+  }
+
+  setAuthMessage(
+    authLanguage === 'tr'
+      ? 'E-postana 6 haneli bir kod gönderdik.'
+      : "We've sent a 6-digit code to your email."
+  )
+  setOtpCode('')
+  setNewPassword('')
+  setAuthMode('reset')
+}
+
+const handleResetPassword = async (event) => {
+  event.preventDefault()
+  setAuthMessage(authLanguage === 'tr' ? 'Şifre güncelleniyor...' : 'Updating password...')
+
+  const { error: verifyError } = await supabase.auth.verifyOtp({
+    email: authData.email,
+    token: otpCode,
+    type: 'recovery',
+  })
+
+  if (verifyError) {
+    setAuthMessage(
+      authLanguage === 'tr' ? 'Kod hatalı ya da süresi dolmuş.' : 'That code is wrong or has expired.'
+    )
+    return
+  }
+
+  const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
+
+  if (updateError) {
+    setAuthMessage(
+      authLanguage === 'tr' ? 'Şifre güncellenemedi. Tekrar dene.' : 'Could not update the password. Try again.'
+    )
+    return
+  }
+
+  setAuthMessage(authLanguage === 'tr' ? 'Şifren güncellendi.' : 'Your password has been updated.')
+  setOtpCode('')
+  setNewPassword('')
+  setAuthMode('')
 }
 
 const handleSignIn = async (event) => {
@@ -247,7 +337,11 @@ const handleSignIn = async (event) => {
   })
 
   if (error) {
-    setAuthMessage('Could not log in. Email or password may be wrong.')
+    setAuthMessage(
+      authLanguage === 'tr'
+        ? 'Giriş yapılamadı. E-posta ya da şifre hatalı olabilir.'
+        : 'Could not log in. Email or password may be wrong.'
+    )
     return
   }
 
@@ -280,6 +374,94 @@ const authText = {
     messagesSection: 'Your messages',
     noMessages: "You haven't sent a message yet.",
     back: 'Back to site',
+
+    heroTag: 'Snow Globe Atelier',
+    heroTagline: 'A little world of your own',
+    heroEst: 'Est. 2026',
+    heroTitle: 'Welcome to your magical little world that will always stay the same.',
+    heroDesc: 'Step into our cozy studio for a guided masterclass in building a magical, one-of-a-kind snow globe.',
+    bookSeatLine1: 'Book',
+    bookSeatLine2: 'a seat',
+    nextClass: 'Next class',
+    nextClassTime: 'Saturday - 11:00 AM',
+
+    processLabel: 'Our process',
+    processTitleLine1: 'From tiny pieces',
+    processTitleLine2: 'to',
+    processTitleEm: 'pure magic.',
+    processDesc: 'No experience needed. We guide you through every detail while leaving plenty of room for your imagination.',
+    processSteps: [
+      ['Step 01', 'Choose Your Scene', 'Select miniature trees, tiny figures, woodland characters, and a story that feels entirely yours.', 'brown'],
+      ['Step 02', 'Set the Magic', 'Arrange each detail, secure your scene, then choose from our custom glitters and soft snowflakes.', 'gold'],
+      ['Step 03', 'Seal & Take Home', 'Fill your globe with our crystal-clear fluid, seal the glass dome, and carry your miniature world home.', 'green'],
+    ],
+
+    galleryTitle: 'Make your own',
+    galleryTitleEm: 'world',
+    galleryTag: 'Guest creations · Winter 2026',
+    galleryNoteLine1: 'Small worlds.',
+    galleryNoteEm: 'Big wonder.',
+
+    afternoonLabel: 'Your afternoon with us',
+    includedLine1: "Everything's",
+    includedEm: 'included.',
+    includedList: [
+      'All premium materials and a glass dome',
+      'A warm drink of your choice',
+      'Seasonal homemade snacks',
+      'Two hours of guided studio time',
+    ],
+    detailsFooter: 'London, United Kingdom · Ages 12+ · Small groups of 10',
+    upcomingDates: 'Upcoming dates',
+    dates: [
+      ['7 February', '11:00 AM · 3 seats left'],
+      ['8 December', '6:30 PM · 3 seats left'],
+      ['26 September', '11:00 AM · 4 seats left'],
+    ],
+    pricePerGuest: '£85 per guest · All materials included',
+
+    testimonialQuote: "I made a tiny version of my mum's childhood home. When the snow started falling,",
+    testimonialQuoteEm: 'we both cried.',
+    testimonialAuthor: 'Clara M. · A Christmas gift',
+
+    privateEvents: 'Private events',
+    ctaTitle: "Bring your favorite people. We'll bring the",
+    ctaTitleEm: 'magic.',
+    ctaDesc: 'Birthdays, team gatherings, and cozy celebrations for groups of 6–20.',
+    planWorkshop: 'Plan a private workshop →',
+
+    sendNote: 'Send us a note',
+    contactTitle: 'Plan your own',
+    contactTitleEm: 'glass world.',
+    contactDesc: 'Tell us who you are, when you would like to visit, or what kind of snow globe you dream of making.',
+    yourName: 'Your name',
+    yourEmail: 'Your email',
+    yourMessage: 'Your message',
+    sendMessage: 'Send message',
+    sending: 'Sending...',
+    formError: 'Something went wrong. Please try again.',
+    formSuccess: 'Your message has been saved.',
+
+    footerTagline: 'Tiny worlds, made slowly and with wonder.',
+    studio: 'Studio',
+    studioAddress1: '18 Willow Street',
+    studioAddress2: 'London, United Kingdom',
+    contactLabel: 'Contact',
+    navProcess: 'The process',
+    navGallery: 'Gallery',
+    navDetails: 'Workshop details',
+
+    forgotPassword: 'Forgot password?',
+    verifyTitle: 'Check your email',
+    verifyDesc: "Enter the 6-digit code we sent to {email}.",
+    otpPlaceholder: '6-digit code',
+    verifyButton: 'Verify',
+    resetTitle: 'Reset your password',
+    resetDesc: 'Enter the code we sent to {email} and choose a new password.',
+    newPasswordPlaceholder: 'New password',
+    sendCode: 'Send code',
+    resetButton: 'Update password',
+    backToLogin: 'Back to login',
   },
   tr: {
      login: 'Giriş Yap',
@@ -300,6 +482,94 @@ const authText = {
     messagesSection: 'Mesajların',
     noMessages: 'Henüz mesaj göndermedin.',
     back: 'Siteye dön',
+
+    heroTag: 'Kar Küresi Atölyesi',
+    heroTagline: 'Kendine ait küçük bir dünya',
+    heroEst: '2026\'dan beri',
+    heroTitle: 'Sonsuza dek aynı kalacak büyülü küçük dünyana hoş geldin.',
+    heroDesc: 'Kendine özel, büyülü bir kar küresi yapmayı öğreneceğin rehberli bir atölye için sıcacık stüdyomuza gel.',
+    bookSeatLine1: 'Yer',
+    bookSeatLine2: 'ayırt',
+    nextClass: 'Sıradaki atölye',
+    nextClassTime: 'Cumartesi - 11:00',
+
+    processLabel: 'Sürecimiz',
+    processTitleLine1: 'Küçük parçalardan',
+    processTitleLine2: '',
+    processTitleEm: 'saf büyüye.',
+    processDesc: 'Deneyim gerekmiyor. Hayal gücüne bolca yer bırakarak her detayda sana rehberlik ediyoruz.',
+    processSteps: [
+      ['1. Adım', 'Sahneni Seç', 'Minik ağaçlar, küçük figürler, orman karakterleri ve tamamen sana ait hissettiren bir hikaye seç.', 'brown'],
+      ['2. Adım', 'Büyüyü Kur', 'Her detayı yerleştir, sahneni sabitle, sonra özel simlerimizden ve yumuşak kar tanelerinden seç.', 'gold'],
+      ['3. Adım', 'Kapat ve Eve Götür', 'Küreni berrak sıvımızla doldur, cam kubbeyi kapat ve minik dünyanı evine götür.', 'green'],
+    ],
+
+    galleryTitle: 'Kendi',
+    galleryTitleEm: 'dünyanı yarat',
+    galleryTag: 'Misafir eserleri · Kış 2026',
+    galleryNoteLine1: 'Küçük dünyalar.',
+    galleryNoteEm: 'Büyük hayranlık.',
+
+    afternoonLabel: 'Bizimle geçireceğin öğleden sonra',
+    includedLine1: 'Her şey',
+    includedEm: 'dahil.',
+    includedList: [
+      'Tüm premium malzemeler ve bir cam kubbe',
+      'Seçtiğin sıcak bir içecek',
+      'Mevsimlik ev yapımı atıştırmalıklar',
+      'İki saatlik rehberli stüdyo zamanı',
+    ],
+    detailsFooter: 'Londra, Birleşik Krallık · 12 yaş ve üzeri · 10 kişilik küçük gruplar',
+    upcomingDates: 'Yaklaşan tarihler',
+    dates: [
+      ['7 Şubat', '11:00 · 3 yer kaldı'],
+      ['8 Aralık', '18:30 · 3 yer kaldı'],
+      ['26 Eylül', '11:00 · 4 yer kaldı'],
+    ],
+    pricePerGuest: 'Kişi başı £85 · Tüm malzemeler dahil',
+
+    testimonialQuote: 'Annemin çocukluk evinin minik bir versiyonunu yaptım. Kar yağmaya başladığında,',
+    testimonialQuoteEm: 'ikimiz de ağladık.',
+    testimonialAuthor: 'Clara M. · Bir Noel hediyesi',
+
+    privateEvents: 'Özel etkinlikler',
+    ctaTitle: 'Sevdiklerini getir, büyüyü biz',
+    ctaTitleEm: 'getirelim.',
+    ctaDesc: '6-20 kişilik gruplar için doğum günleri, ekip buluşmaları ve sıcacık kutlamalar.',
+    planWorkshop: 'Özel atölye planla →',
+
+    sendNote: 'Bize not bırak',
+    contactTitle: 'Kendi',
+    contactTitleEm: 'cam dünyanı planla.',
+    contactDesc: 'Bize kim olduğunu, ne zaman gelmek istediğini ya da nasıl bir kar küresi hayal ettiğini anlat.',
+    yourName: 'Adın',
+    yourEmail: 'E-postan',
+    yourMessage: 'Mesajın',
+    sendMessage: 'Mesaj gönder',
+    sending: 'Gönderiliyor...',
+    formError: 'Bir hata oluştu. Tekrar deneyin.',
+    formSuccess: 'Mesajın kaydedildi.',
+
+    footerTagline: 'Küçük dünyalar, yavaşça ve hayranlıkla yapılır.',
+    studio: 'Stüdyo',
+    studioAddress1: '18 Willow Sokak',
+    studioAddress2: 'Londra, Birleşik Krallık',
+    contactLabel: 'İletişim',
+    navProcess: 'Süreç',
+    navGallery: 'Galeri',
+    navDetails: 'Atölye detayları',
+
+    forgotPassword: 'Şifremi unuttum?',
+    verifyTitle: 'E-postanı kontrol et',
+    verifyDesc: '{email} adresine gönderdiğimiz 6 haneli kodu gir.',
+    otpPlaceholder: '6 haneli kod',
+    verifyButton: 'Doğrula',
+    resetTitle: 'Şifreni sıfırla',
+    resetDesc: '{email} adresine gönderdiğimiz kodu gir ve yeni bir şifre seç.',
+    newPasswordPlaceholder: 'Yeni şifre',
+    sendCode: 'Kod gönder',
+    resetButton: 'Şifreyi güncelle',
+    backToLogin: 'Girişe dön',
   },
 }
 
@@ -385,20 +655,22 @@ const t = authText[authLanguage]
 </div>
 {!isPanelRoute && (
 <div className="nav-links">
-          <a href="#process">The process</a>
-          <a href="#gallery">Gallery</a>
-          <a href="#details">Workshop details</a>
+          <a href="#process">{t.navProcess}</a>
+          <a href="#gallery">{t.navGallery}</a>
+          <a href="#details">{t.navDetails}</a>
+          <motion.button
+            className="mini-language-toggle"
+            type="button"
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setAuthLanguage(authLanguage === 'en' ? 'tr' : 'en')}
+          >
+            {t.switch}
+          </motion.button>
         </div>
 )}
 
         <div className="auth-actions">
-<button
-  className="language-toggle"
-  type="button"
-  onClick={() => setAuthLanguage(authLanguage === 'en' ? 'tr' : 'en')}
->
-  {t.switch}
-</button>
   {session ? (
     <>
       <span className="welcome-text">{t.welcome}, {session.user.email}</span>
@@ -448,11 +720,15 @@ const t = authText[authLanguage]
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
   >
+    <AnimatePresence mode="wait">
+    {(authMode === 'login' || authMode === 'register') && (
     <motion.form
+      key="credentials"
       className="auth-card"
       onSubmit={authMode === 'login' ? handleSignIn : handleSignUp}
       initial={{ opacity: 0, y: 24, scale: 0.96 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -12, scale: 0.98 }}
       transition={{ duration: 0.35, ease: 'easeOut' }}
     >
       <button
@@ -491,8 +767,163 @@ const t = authText[authLanguage]
        {authMode === 'login' ? t.login : t.signup}
       </button>
 
+      {authMode === 'login' && (
+        <button
+          type="button"
+          className="auth-link-button"
+          onClick={() => {
+            setAuthMessage('')
+            setAuthMode('forgot')
+          }}
+        >
+          {t.forgotPassword}
+        </button>
+      )}
+
       {authMessage && <p>{authMessage}</p>}
     </motion.form>
+    )}
+
+    {authMode === 'verify' && (
+      <motion.form
+        key="verify"
+        className="auth-card"
+        onSubmit={handleVerifySignup}
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -12, scale: 0.98 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
+        <button
+          className="auth-close"
+          type="button"
+          onClick={() => {
+            setAuthMode('')
+            setAuthMessage('')
+          }}
+        >
+         <span className="auth-close-icon">x</span>
+        </button>
+
+        <span>{t.member}</span>
+        <h2>{t.verifyTitle}</h2>
+        <p className="auth-hint">{t.verifyDesc.replace('{email}', authData.email)}</p>
+
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          placeholder={t.otpPlaceholder}
+          value={otpCode}
+          onChange={(event) => setOtpCode(event.target.value)}
+          required
+        />
+
+        <button type="submit">{t.verifyButton}</button>
+
+        {authMessage && <p>{authMessage}</p>}
+      </motion.form>
+    )}
+
+    {authMode === 'forgot' && (
+      <motion.form
+        key="forgot"
+        className="auth-card"
+        onSubmit={handleForgotPassword}
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -12, scale: 0.98 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
+        <button
+          className="auth-close"
+          type="button"
+          onClick={() => {
+            setAuthMode('')
+            setAuthMessage('')
+          }}
+        >
+         <span className="auth-close-icon">x</span>
+        </button>
+
+        <span>{t.member}</span>
+        <h2>{t.resetTitle}</h2>
+
+        <input
+          type="email"
+          name="email"
+          placeholder={t.email}
+          value={authData.email}
+          onChange={handleAuthInputChange}
+          required
+        />
+
+        <button type="submit">{t.sendCode}</button>
+
+        <button
+          type="button"
+          className="auth-link-button"
+          onClick={() => {
+            setAuthMessage('')
+            setAuthMode('login')
+          }}
+        >
+          {t.backToLogin}
+        </button>
+
+        {authMessage && <p>{authMessage}</p>}
+      </motion.form>
+    )}
+
+    {authMode === 'reset' && (
+      <motion.form
+        key="reset"
+        className="auth-card"
+        onSubmit={handleResetPassword}
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: -12, scale: 0.98 }}
+        transition={{ duration: 0.35, ease: 'easeOut' }}
+      >
+        <button
+          className="auth-close"
+          type="button"
+          onClick={() => {
+            setAuthMode('')
+            setAuthMessage('')
+          }}
+        >
+         <span className="auth-close-icon">x</span>
+        </button>
+
+        <span>{t.member}</span>
+        <h2>{t.resetTitle}</h2>
+        <p className="auth-hint">{t.resetDesc.replace('{email}', authData.email)}</p>
+
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={6}
+          placeholder={t.otpPlaceholder}
+          value={otpCode}
+          onChange={(event) => setOtpCode(event.target.value)}
+          required
+        />
+
+        <input
+          type="password"
+          placeholder={t.newPasswordPlaceholder}
+          value={newPassword}
+          onChange={(event) => setNewPassword(event.target.value)}
+          required
+        />
+
+        <button type="submit">{t.resetButton}</button>
+
+        {authMessage && <p>{authMessage}</p>}
+      </motion.form>
+    )}
+    </AnimatePresence>
   </motion.div>
 )}
 
@@ -633,20 +1064,19 @@ const t = authText[authLanguage]
         >
           <div className="hero-meta">
             <div>
-              <span>Snow Globe Atelier</span>
-              <em>A little world of your own</em>
+              <span>{t.heroTag}</span>
+              <em>{t.heroTagline}</em>
             </div>
-            <span>Est. 2026</span>
+            <span>{t.heroEst}</span>
           </div>
 
           <h1>
-            Welcome to your magical little world that will always stay the same.
+            {t.heroTitle}
           </h1>
 
           <div className="hero-bottom">
             <p>
-              Step into our cozy studio for a guided masterclass in building a
-              magical, one-of-a-kind snow globe.
+              {t.heroDesc}
             </p>
 
             <motion.button
@@ -654,7 +1084,7 @@ const t = authText[authLanguage]
               whileHover={{ scale: 1.08 }}
               whileTap={{ scale: 0.94 }}
             >
-              Book<br />a seat
+              {t.bookSeatLine1}<br />{t.bookSeatLine2}
             </motion.button>
           </div>
         </motion.div>
@@ -675,8 +1105,8 @@ const t = authText[authLanguage]
 />
                 <div className="class-strip">
             <div>
-              <span>Next class</span>
-              <strong>Saturday - 11:00 AM</strong>
+              <span>{t.nextClass}</span>
+              <strong>{t.nextClassTime}</strong>
             </div>
             <motion.button
               className="arrow-button"
@@ -697,23 +1127,18 @@ const t = authText[authLanguage]
           transition={{ duration: 0.7, ease: 'easeOut' }}
         >
           <div>
-            <span>Our process</span>
+            <span>{t.processLabel}</span>
             <h2>
-              From tiny pieces <br /> to <em>pure magic.</em>
+              {t.processTitleLine1} <br /> {t.processTitleLine2} <em>{t.processTitleEm}</em>
             </h2>
           </div>
           <p>
-            No experience needed. We guide you through every detail while
-            leaving plenty of room for your imagination.
+            {t.processDesc}
           </p>
         </motion.div>
 
         <div className="process-grid">
-          {[
-            ['Step 01', 'Choose Your Scene', 'Select miniature trees, tiny figures, woodland characters, and a story that feels entirely yours.', 'brown'],
-            ['Step 02', 'Set the Magic', 'Arrange each detail, secure your scene, then choose from our custom glitters and soft snowflakes.', 'gold'],
-            ['Step 03', 'Seal & Take Home', 'Fill your globe with our crystal-clear fluid, seal the glass dome, and carry your miniature world home.', 'green'],
-          ].map((card, index) => (
+          {t.processSteps.map((card, index) => (
             <motion.article
               className={`process-card ${card[3]}`}
               key={card[1]}
@@ -744,9 +1169,9 @@ viewport={{ once: false, amount: 0.35 }}
 transition={{ duration: 0.75, ease: 'easeOut' }}
         >
           <h2>
-            Make your own <em>world</em>
+            {t.galleryTitle} <em>{t.galleryTitleEm}</em>
           </h2>
-          <span>Guest creations · Winter 2026</span>
+          <span>{t.galleryTag}</span>
         </motion.div>
 
         <div className="gallery-grid">
@@ -773,8 +1198,8 @@ transition={{ duration: 0.75, ease: 'easeOut' }}
           >
             <span>*</span>
             <h3>
-              Small worlds. <br />
-              <em>Big wonder.</em>
+              {t.galleryNoteLine1} <br />
+              <em>{t.galleryNoteEm}</em>
             </h3>
           </motion.div>
 <motion.div
@@ -794,33 +1219,28 @@ viewport={{ once: false, amount: 0.25 }}
 transition={{ duration: 0.8, ease: 'easeOut' }}
         >
           <div className="included-panel">
-            <span>Your afternoon with us</span>
+            <span>{t.afternoonLabel}</span>
             <h2>
-              Everything's <br />
-              <em>included.</em>
+              {t.includedLine1} <br />
+              <em>{t.includedEm}</em>
             </h2>
 
             <ul>
-              <li>All premium materials and a glass dome</li>
-              <li>A warm drink of your choice</li>
-              <li>Seasonal homemade snacks</li>
-              <li>Two hours of guided studio time</li>
+              {t.includedList.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
             </ul>
 
-            <p>London, United Kingdom · Ages 12+ · Small groups of 10</p>
+            <p>{t.detailsFooter}</p>
           </div>
 
           <div className="dates-panel">
             <div className="dates-title">
-              <span>Upcoming dates</span>
+              <span>{t.upcomingDates}</span>
               <strong>*</strong>
             </div>
 
-            {[
-              ['7 February', '11:00 AM · 3 seats left'],
-              ['8 December', '6:30 PM · 3 seats left'],
-              ['26 September', '11:00 AM · 4 seats left'],
-            ].map((date) => (
+            {t.dates.map((date) => (
               <motion.button
                 className="date-row"
                 key={date[0]}
@@ -835,7 +1255,7 @@ transition={{ duration: 0.8, ease: 'easeOut' }}
               </motion.button>
             ))}
 
-            <p>£85 per guest · All materials included</p>
+            <p>{t.pricePerGuest}</p>
           </div>
         </motion.div>
       </section>
@@ -849,10 +1269,9 @@ transition={{ duration: 0.8, ease: 'easeOut' }}
         >
           <span>*</span>
           <blockquote>
-            “I made a tiny version of my mum's childhood home. When the snow
-            started falling, <em>we both cried.</em>”
+            “{t.testimonialQuote} <em>{t.testimonialQuoteEm}</em>”
           </blockquote>
-          <p>Clara M. · A Christmas gift</p>
+          <p>{t.testimonialAuthor}</p>
         </motion.div>
       </section>
 
@@ -864,22 +1283,21 @@ whileInView={{ opacity: 1, y: 0, scale: 1 }}
 viewport={{ once: false, amount: 0.35 }}
 transition={{ duration: 0.8, ease: 'easeOut' }}        >
           <div>
-            <span>Private events</span>
+            <span>{t.privateEvents}</span>
             <h2>
-              Bring your favorite people. We'll bring the <em>magic.</em>
+              {t.ctaTitle} <em>{t.ctaTitleEm}</em>
             </h2>
           </div>
           <div className="cta-side">
             <p>
-              Birthdays, team gatherings, and cozy celebrations for groups of
-              6–20.
+              {t.ctaDesc}
             </p>
             <motion.button
               className="private-button"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.96 }}
             >
-              Plan a private workshop →
+              {t.planWorkshop}
             </motion.button>
           </div>
         </motion.div>
@@ -893,64 +1311,93 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
     transition={{ duration: 0.75, ease: 'easeOut' }}
   >
     <div className="contact-copy">
-      <span>Send us a note</span>
+      <span>{t.sendNote}</span>
       <h2>
-        Plan your own <em>glass world.</em>
+        {t.contactTitle} <em>{t.contactTitleEm}</em>
       </h2>
       <p>
-        Tell us who you are, when you would like to visit, or what kind of snow globe you dream of making.
+        {t.contactDesc}
       </p>
     </div>
 
-    <form className="contact-form" onSubmit={handleFormSubmit}>
-      <input
+    <motion.form
+      className="contact-form"
+      onSubmit={handleFormSubmit}
+      initial="hidden"
+      whileInView="visible"
+      viewport={{ once: true, amount: 0.4 }}
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.08 } },
+      }}
+    >
+      <motion.input
         type="text"
         name="name"
-        placeholder="Your name"
+        placeholder={t.yourName}
         value={formData.name}
         onChange={handleInputChange}
         required
+        variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
       />
 
-      <input
+      <motion.input
         type="email"
         name="email"
-        placeholder="Your email"
+        placeholder={t.yourEmail}
         value={formData.email}
         onChange={handleInputChange}
         required
+        variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
       />
 
-      <textarea
+      <motion.textarea
         name="message"
-        placeholder="Your message"
+        placeholder={t.yourMessage}
         value={formData.message}
         onChange={handleInputChange}
         required
+        variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
       />
 
-      <button type="submit">Send message</button>
+      <motion.button
+        type="submit"
+        variants={{ hidden: { opacity: 0, y: 12 }, visible: { opacity: 1, y: 0 } }}
+        whileHover={{ scale: 1.06 }}
+        whileTap={{ scale: 0.94 }}
+      >
+        {t.sendMessage}
+      </motion.button>
 
-      {formStatus && <p className="form-status">{formStatus}</p>}
-    </form>
+      {formStatus && (
+        <motion.p
+          className="form-status"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          {formStatus}
+        </motion.p>
+      )}
+    </motion.form>
   </motion.div>
 </section>
       <footer className="footer">
         <div>
           <strong>The Glass Worlds</strong>
-          <p>Tiny worlds, made slowly and with wonder.</p>
+          <p>{t.footerTagline}</p>
         </div>
 
         <div>
-          <span>Studio</span>
+          <span>{t.studio}</span>
           <p>
-            18 Willow Street<br />
-            London, United Kingdom
+            {t.studioAddress1}<br />
+            {t.studioAddress2}
           </p>
         </div>
 
         <div>
-          <span>Contact</span>
+          <span>{t.contactLabel}</span>
           <p>hello@theglassworlds.studio</p>
           <p>Instagram</p>
         </div>

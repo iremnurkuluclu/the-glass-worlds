@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Shop from './Shop.jsx'
+import Admin from './Admin.jsx'
 import './App.css'
 const snowglobe =
   'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720794/snowglobe_laglkr.png'
@@ -26,9 +27,17 @@ const location = useLocation()
 const navigate = useNavigate()
 const isPanelRoute = location.pathname === '/panel'
 const isShopRoute = location.pathname === '/shop'
-const [profileData, setProfileData] = useState({ full_name: '', avatar_url: '' })
+const isAdminRoute = location.pathname === '/admin'
+const OWNER_EMAIL = 'nirem587@gmail.com'
+const [profileData, setProfileData] = useState({ full_name: '', avatar_url: '', address: '' })
 const [profileStatus, setProfileStatus] = useState('')
 const [userMessages, setUserMessages] = useState([])
+const [orders, setOrders] = useState([])
+const [supportRequests, setSupportRequests] = useState([])
+const [supportForm, setSupportForm] = useState({ subject: '', message: '', type: 'help' })
+const [supportStatus, setSupportStatus] = useState('')
+const [accountPassword, setAccountPassword] = useState('')
+const [passwordChangeStatus, setPasswordChangeStatus] = useState('')
   const [formStatus, setFormStatus] = useState('')
 const [session, setSession] = useState(null)
 const [sessionChecked, setSessionChecked] = useState(false)
@@ -53,7 +62,7 @@ const loadPanelData = async (currentSession) => {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('full_name, avatar_url')
+    .select('full_name, avatar_url, address')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -61,6 +70,7 @@ const loadPanelData = async (currentSession) => {
     setProfileData({
       full_name: profile.full_name || '',
       avatar_url: profile.avatar_url || '',
+      address: profile.address || '',
     })
   }
 
@@ -71,6 +81,22 @@ const loadPanelData = async (currentSession) => {
     .order('created_at', { ascending: false })
 
   setUserMessages(messages || [])
+
+  const { data: orderRows } = await supabase
+    .from('orders')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  setOrders(orderRows || [])
+
+  const { data: supportRows } = await supabase
+    .from('support_requests')
+    .select('*')
+    .eq('user_id', user.id)
+    .order('created_at', { ascending: false })
+
+  setSupportRequests(supportRows || [])
 }
   const handleInputChange = (event) => {
     const { name, value } = event.target
@@ -125,8 +151,10 @@ useEffect(() => {
   if (session) {
     loadPanelData(session)
   } else {
-    setProfileData({ full_name: '', avatar_url: '' })
+    setProfileData({ full_name: '', avatar_url: '', address: '' })
     setUserMessages([])
+    setOrders([])
+    setSupportRequests([])
   }
 }, [session])
 
@@ -134,7 +162,10 @@ useEffect(() => {
   if (sessionChecked && (isPanelRoute || isShopRoute) && !session) {
     navigate('/', { replace: true })
   }
-}, [sessionChecked, isPanelRoute, isShopRoute, session, navigate])
+  if (sessionChecked && isAdminRoute && (!session || session.user.email !== OWNER_EMAIL)) {
+    navigate('/', { replace: true })
+  }
+}, [sessionChecked, isPanelRoute, isShopRoute, isAdminRoute, session, navigate])
 
 const handleProfileInputChange = (event) => {
   const { name, value } = event.target
@@ -155,6 +186,7 @@ const handleProfileUpdate = async (event) => {
     id: session.user.id,
     full_name: profileData.full_name,
     avatar_url: profileData.avatar_url,
+    address: profileData.address,
     updated_at: new Date().toISOString(),
   })
 
@@ -214,6 +246,57 @@ const handleAvatarUpload = async (event) => {
   }
 
   setProfileStatus(authLanguage === 'tr' ? 'Fotoğraf güncellendi.' : 'Photo updated.')
+}
+
+const handlePasswordChange = async (event) => {
+  event.preventDefault()
+  if (!accountPassword) return
+
+  setPasswordChangeStatus(authLanguage === 'tr' ? 'Güncelleniyor...' : 'Updating...')
+
+  const { error } = await supabase.auth.updateUser({ password: accountPassword })
+
+  if (error) {
+    setPasswordChangeStatus(
+      authLanguage === 'tr' ? 'Şifre güncellenemedi. Tekrar dene.' : 'Could not update password. Try again.'
+    )
+    return
+  }
+
+  setAccountPassword('')
+  setPasswordChangeStatus(authLanguage === 'tr' ? 'Şifren güncellendi.' : 'Your password has been updated.')
+}
+
+const handleSupportInputChange = (event) => {
+  const { name, value } = event.target
+  setSupportForm((current) => ({ ...current, [name]: value }))
+}
+
+const handleSupportSubmit = async (event) => {
+  event.preventDefault()
+  if (!session) return
+
+  setSupportStatus(authLanguage === 'tr' ? 'Gönderiliyor...' : 'Sending...')
+
+  const { data, error } = await supabase
+    .from('support_requests')
+    .insert({
+      user_id: session.user.id,
+      user_email: session.user.email,
+      subject: supportForm.subject,
+      message: supportForm.message,
+      type: supportForm.type,
+    })
+    .select()
+
+  if (error) {
+    setSupportStatus(authLanguage === 'tr' ? 'Gönderilemedi. Tekrar dene.' : 'Could not send. Try again.')
+    return
+  }
+
+  setSupportRequests((current) => [data[0], ...current])
+  setSupportForm({ subject: '', message: '', type: 'help' })
+  setSupportStatus(authLanguage === 'tr' ? 'Talebin alındı.' : 'Your request has been received.')
 }
 
 const handleAuthInputChange = (event) => {
@@ -375,6 +458,17 @@ const authText = {
     save: 'Save changes',
     messagesSection: 'Your messages',
     noMessages: "You haven't sent a message yet.",
+    addressLabel: 'Delivery address',
+    passwordSection: 'Change password',
+    updatePassword: 'Update password',
+    ordersSection: 'Past orders',
+    noOrders: "You haven't placed any orders yet.",
+    supportSection: 'Support requests',
+    supportTypeHelp: 'Ask for help',
+    supportTypeReturn: 'Request a return',
+    supportSubject: 'Subject',
+    supportMessage: 'Tell us more',
+    supportSubmit: 'Send request',
     back: 'Back to site',
 
     heroTag: 'Snow Globe Atelier',
@@ -483,6 +577,17 @@ const authText = {
     save: 'Değişiklikleri kaydet',
     messagesSection: 'Mesajların',
     noMessages: 'Henüz mesaj göndermedin.',
+    addressLabel: 'Teslimat adresi',
+    passwordSection: 'Şifre değiştir',
+    updatePassword: 'Şifreyi güncelle',
+    ordersSection: 'Geçmiş siparişler',
+    noOrders: 'Henüz sipariş vermedin.',
+    supportSection: 'Destek talepleri',
+    supportTypeHelp: 'Yardım iste',
+    supportTypeReturn: 'İade talep et',
+    supportSubject: 'Konu',
+    supportMessage: 'Detay yaz',
+    supportSubmit: 'Talebi gönder',
     back: 'Siteye dön',
 
     heroTag: 'Kar Küresi Atölyesi',
@@ -655,7 +760,7 @@ const t = authText[authLanguage]
 
   <span>The Glass Worlds</span>
 </div>
-{!isPanelRoute && !isShopRoute && (
+{!isPanelRoute && !isShopRoute && !isAdminRoute && (
 <div className="nav-links">
           <a href="#process">{t.navProcess}</a>
           <a href="#gallery">{t.navGallery}</a>
@@ -700,6 +805,16 @@ const t = authText[authLanguage]
       >
         {authLanguage === 'tr' ? 'Mağaza' : 'Shop'}
       </motion.button>
+      {session.user.email === OWNER_EMAIL && (
+        <motion.button
+          className="auth-link panel-toggle"
+          whileHover={{ scale: 1.06 }}
+          whileTap={{ scale: 0.96 }}
+          onClick={() => navigate(isAdminRoute ? '/' : '/admin')}
+        >
+          Admin
+        </motion.button>
+      )}
     </>
   ) : (
     <>
@@ -938,7 +1053,17 @@ const t = authText[authLanguage]
 )}
 
 <AnimatePresence mode="wait">
-{isShopRoute && session ? (
+{isAdminRoute && session && session.user.email === OWNER_EMAIL ? (
+  <motion.div
+    key="admin"
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -16 }}
+    transition={{ duration: 0.35, ease: 'easeOut' }}
+  >
+    <Admin session={session} language={authLanguage} onLanguageChange={setAuthLanguage} onBack={() => navigate('/')} />
+  </motion.div>
+) : isShopRoute && session ? (
   <motion.div
     key="shop"
     initial={{ opacity: 0, y: 16 }}
@@ -1022,6 +1147,14 @@ const t = authText[authLanguage]
             onChange={handleProfileInputChange}
           />
 
+          <input
+            type="text"
+            name="address"
+            placeholder={t.addressLabel}
+            value={profileData.address}
+            onChange={handleProfileInputChange}
+          />
+
           <motion.button
             type="submit"
             whileHover={{ scale: 1.06 }}
@@ -1062,6 +1195,90 @@ const t = authText[authLanguage]
                 </motion.li>
               ))}
             </motion.ul>
+          )}
+        </motion.div>
+
+        <motion.form
+          className="panel-password"
+          onSubmit={handlePasswordChange}
+          variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+        >
+          <h3>{t.passwordSection}</h3>
+          <input
+            type="password"
+            placeholder={t.newPasswordPlaceholder}
+            value={accountPassword}
+            onChange={(event) => setAccountPassword(event.target.value)}
+            required
+          />
+          <motion.button type="submit" whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.96 }}>
+            {t.updatePassword}
+          </motion.button>
+          {passwordChangeStatus && <p className="panel-status">{passwordChangeStatus}</p>}
+        </motion.form>
+
+        <motion.div
+          className="panel-orders"
+          variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+        >
+          <h3>{t.ordersSection}</h3>
+          {orders.length === 0 ? (
+            <p className="panel-empty">{t.noOrders}</p>
+          ) : (
+            <ul>
+              {orders.map((order) => (
+                <li key={order.id}>
+                  <strong>{new Date(order.created_at).toLocaleDateString()}</strong>
+                  <p>
+                    {(order.items || []).map((item) => `${item.name} ×${item.quantity}`).join(', ')}
+                  </p>
+                  <span>£{Number(order.total).toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </motion.div>
+
+        <motion.div
+          className="panel-support"
+          variants={{ hidden: { opacity: 0, y: 16 }, visible: { opacity: 1, y: 0 } }}
+        >
+          <h3>{t.supportSection}</h3>
+          <form onSubmit={handleSupportSubmit}>
+            <select name="type" value={supportForm.type} onChange={handleSupportInputChange}>
+              <option value="help">{t.supportTypeHelp}</option>
+              <option value="return">{t.supportTypeReturn}</option>
+            </select>
+            <input
+              type="text"
+              name="subject"
+              placeholder={t.supportSubject}
+              value={supportForm.subject}
+              onChange={handleSupportInputChange}
+              required
+            />
+            <textarea
+              name="message"
+              placeholder={t.supportMessage}
+              value={supportForm.message}
+              onChange={handleSupportInputChange}
+              required
+            />
+            <motion.button type="submit" whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.96 }}>
+              {t.supportSubmit}
+            </motion.button>
+            {supportStatus && <p className="panel-status">{supportStatus}</p>}
+          </form>
+
+          {supportRequests.length > 0 && (
+            <ul className="support-list">
+              {supportRequests.map((req) => (
+                <li key={req.id}>
+                  <strong>{req.subject}</strong>
+                  <span className={`support-status ${req.status}`}>{req.status}</span>
+                </li>
+              ))}
+            </ul>
           )}
         </motion.div>
       </motion.div>

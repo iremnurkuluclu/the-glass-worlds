@@ -104,3 +104,39 @@ Formu Supabase’teki `messages` tablosuna bağladım. Test sonucunda gönderile
 - En çok zorlandığım noktalar: Storage ve tablo RLS policy'lerini doğru yazmak (`storage.foldername`, `auth.uid()` eşleştirmesi), bir sütunu yanlış isimle kaydedip (`updated_at yaz`) bunu SQL Editor ile `ALTER TABLE ... RENAME COLUMN` diyerek düzeltmek, PostgREST'in şema önbelleğini `NOTIFY pgrst, 'reload schema'` ile yenilemeyi öğrenmek, ve Vercel'e deploy ederken `react-router-dom`'u `package.json`'a eklemeyi unutup build'in kırılmasını çözmek.
 - Öğrendiklerim: Row Level Security mantığını uçtan uca kurmayı (tablo + storage), React Router ile korumalı sayfa (protected route) kavramını, Supabase Storage'da dosya yükleme akışını, PostgREST şema önbelleği kavramını ve Vercel build hatalarını log okuyarak teşhis etmeyi öğrendim.
 
+- - Case 5 Sonrası - Ek Geliştirmeler
+
+Case 5 teslim edildikten sonra, kendi isteğimle projeye ekstra özellikler ekledim. Amacım hem daha fazla teknik konu öğrenmek hem de projeyi gerçek bir ürün gibi geliştirmekti.
+
+- Site Geneli Çoklu Dil Desteği
+
+- Daha önce sadece giriş/kayıt ve panel ekranlarında olan TR/EN dil değişimini, sitenin tamamına (hero, süreç, galeri, atölye detayları, yorum, iletişim formu, footer) yaydım.
+- Dil butonunu navbar'da "Workshop details" linkinin yanına, küçük ve sade bir daire olarak taşıdım.
+
+- 6 Haneli Kod ile Kayıt ve Şifre Sıfırlama
+
+- Varsayılan olarak Supabase, kayıt ve şifre sıfırlama işlemlerinde kullanıcıya bir link gönderiyordu. Bunun yerine kullanıcıya 6 haneli bir kod gönderilip, kullanıcının bu kodu siteye girerek doğrulama yapmasını sağladım (`supabase.auth.verifyOtp`).
+- Bunun için Supabase'in varsayılan e-posta gönderim sistemini kullanmak yeterli olmadı; kendi Gmail hesabımı özel SMTP olarak bağlamam gerekti (Gmail uygulama şifresi oluşturup Supabase'e tanımladım).
+- E-posta şablonlarını (`Confirm signup`, `Reset Password`) `{{ .ConfirmationURL }}` yerine `{{ .Token }}` gösterecek şekilde düzenledim.
+- Ayrıca "Şifremi unuttum" diye tamamen yeni bir akış ekledim: e-posta gir → kod al → kod ve yeni şifreyi gir → şifre güncellensin.
+- En çok zorlandığım nokta: Supabase'in varsayılan kod uzunluğunun 6 değil 8 hane olması (Email OTP length ayarından düzelttim) ve "Confirm email" ayarının kapalı olması yüzünden hiç mail gitmemesiydi.
+
+- Yeni Bölüm: Mağaza (/shop)
+
+Case 5'teki kullanıcı paneline ek olarak, sadece giriş yapmış kullanıcıların erişebildiği ikinci bir korumalı sayfa (`/shop`) ekledim. Gece laciverdi/buz mavisi renk paletiyle, cam efekti (glassmorphism) temalı, ayrı bir tasarım kullandım.
+
+- Kar Küresi Nasıl Yapılır: Atölyede kullandığımız gerçek yöntemi  adım adım anlatan bir kısım yaptım.
+- Kar Küresi Kitleri: Supabase'deki `kits` tablosundan gelen ürünler, "Sepete Ekle" ve kalp animasyonlu favorileme.
+- Üretici Kar Küreleri: Atölyeye gelip kendi küresini yapan kişilerin küreleri. Sadece atölye sahibi  yeni ilan ekleyebiliyor; herkes görüntüleyip sepete ekleyebiliyor. Bir küreye tıklayınca, o küreyi yapan kişinin adı ve yazdığı samimi bir notu gösteren bir modal açılıyor.
+- Favorilerim ve Sepetim: Kalıcı olarak Supabase'e kaydediliyor (hesaba bağlı, `cart_items` ve `favorites` tabloları).
+- Ödeme Ekranı: Teslimat bilgileri, kart bilgileri ve girilen bilgilerle canlı güncellenen, CVC alanına tıklanınca arkaya dönen interaktif bir 3D kart önizlemesi içeren bir modal. Gerçek bir ödeme alınmıyor, sadece bir önizleme.
+- Bu bölüm için `kits`, `secondhand_globes`, `cart_items`, `favorites` adında 4 yeni Supabase tablosu oluşturup RLS policy'lerini kurdum. `secondhand_globes` tablosunda hem "herkes görebilir" hem "sadece atölye sahibi ekleyebilir/silebilir" kurallarını ayrı ayrı yazdım.
+- En çok zorlandığım nokta: RLS policy'lerinde INSERT/UPDATE/SELECT işlemlerinin farklı ihtiyaçlara göre ayrı ayrı yazılması gerektiğini kavramak, ve bir küre yapan kişinin adını (satıcı hesabından bağımsız olarak) ayrı bir `maker_name` sütununda tutmam gerektiğini fark etmek oldu.
+
+- Öğrendiklerim
+
+- Supabase'de özel SMTP (custom SMTP) kurulumunu ve Gmail üzerinden uygulama şifresiyle e-posta göndermeyi öğrendim.
+- Bir Supabase tablosunda birden fazla RLS policy'sinin (SELECT herkese açık, INSERT/DELETE sadece belirli bir hesaba özel gibi) nasıl birlikte çalıştığını öğrendim.
+- React'te tek bir sayfada birden fazla "görünüm" (tab/section) yönetmeyi ve bunlar arasında Framer Motion ile geçiş animasyonu yapmayı pekiştirdim.
+- CSS'te glassmorphism (buzlu cam) efekti ve 3D kart çevirme animasyonu (`rotateY`, `backface-visibility`) yapmayı öğrendim.
+

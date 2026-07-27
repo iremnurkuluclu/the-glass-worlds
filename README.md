@@ -104,11 +104,9 @@ Formu Supabase’teki `messages` tablosuna bağladım. Test sonucunda gönderile
 - En çok zorlandığım noktalar: Storage ve tablo RLS policy'lerini doğru yazmak (`storage.foldername`, `auth.uid()` eşleştirmesi), bir sütunu yanlış isimle kaydedip (`updated_at yaz`) bunu SQL Editor ile `ALTER TABLE ... RENAME COLUMN` diyerek düzeltmek, PostgREST'in şema önbelleğini `NOTIFY pgrst, 'reload schema'` ile yenilemeyi öğrenmek, ve Vercel'e deploy ederken `react-router-dom`'u `package.json`'a eklemeyi unutup build'in kırılmasını çözmek.
 - Öğrendiklerim: Row Level Security mantığını uçtan uca kurmayı (tablo + storage), React Router ile korumalı sayfa (protected route) kavramını, Supabase Storage'da dosya yükleme akışını, PostgREST şema önbelleği kavramını ve Vercel build hatalarını log okuyarak teşhis etmeyi öğrendim.
 
-- - Case 5 Sonrası - Ek Geliştirmeler
+- Case 5 Sonrası - Ek Geliştirmeler
 
-Case 5 teslim edildikten sonra, kendi isteğimle projeye ekstra özellikler ekledim. Amacım hem daha fazla teknik konu öğrenmek hem de projeyi gerçek bir ürün gibi geliştirmekti.
-
-- Site Geneli Çoklu Dil Desteği
+ Site Geneli Çoklu Dil Desteği
 
 - Daha önce sadece giriş/kayıt ve panel ekranlarında olan TR/EN dil değişimini, sitenin tamamına (hero, süreç, galeri, atölye detayları, yorum, iletişim formu, footer) yaydım.
 - Dil butonunu navbar'da "Workshop details" linkinin yanına, küçük ve sade bir daire olarak taşıdım.
@@ -125,9 +123,9 @@ Case 5 teslim edildikten sonra, kendi isteğimle projeye ekstra özellikler ekle
 
 Case 5'teki kullanıcı paneline ek olarak, sadece giriş yapmış kullanıcıların erişebildiği ikinci bir korumalı sayfa (`/shop`) ekledim. Gece laciverdi/buz mavisi renk paletiyle, cam efekti (glassmorphism) temalı, ayrı bir tasarım kullandım.
 
-- Kar Küresi Nasıl Yapılır: Atölyede kullandığımız gerçek yöntemi  adım adım anlatan bir kısım yaptım.
+- Kar Küresi Nasıl Yapılır: Atölyede kullandığımız gerçek yöntemi (cam kubbe + ahşap taban) adım adım anlatan, fotoğraflı bir rehber.
 - Kar Küresi Kitleri: Supabase'deki `kits` tablosundan gelen ürünler, "Sepete Ekle" ve kalp animasyonlu favorileme.
-- Üretici Kar Küreleri: Atölyeye gelip kendi küresini yapan kişilerin küreleri. Sadece atölye sahibi  yeni ilan ekleyebiliyor; herkes görüntüleyip sepete ekleyebiliyor. Bir küreye tıklayınca, o küreyi yapan kişinin adı ve yazdığı samimi bir notu gösteren bir modal açılıyor.
+- Üretici Kar Küreleri: Atölyeye gelip kendi küresini yapan kişilerin küreleri. Sadece atölye sahibi (benim hesabım) yeni ilan ekleyebiliyor; herkes görüntüleyip sepete ekleyebiliyor. Bir küreye tıklayınca, o küreyi yapan kişinin adı ve yazdığı samimi bir notu gösteren bir modal açılıyor.
 - Favorilerim ve Sepetim: Kalıcı olarak Supabase'e kaydediliyor (hesaba bağlı, `cart_items` ve `favorites` tabloları).
 - Ödeme Ekranı: Teslimat bilgileri, kart bilgileri ve girilen bilgilerle canlı güncellenen, CVC alanına tıklanınca arkaya dönen interaktif bir 3D kart önizlemesi içeren bir modal. Gerçek bir ödeme alınmıyor, sadece bir önizleme.
 - Bu bölüm için `kits`, `secondhand_globes`, `cart_items`, `favorites` adında 4 yeni Supabase tablosu oluşturup RLS policy'lerini kurdum. `secondhand_globes` tablosunda hem "herkes görebilir" hem "sadece atölye sahibi ekleyebilir/silebilir" kurallarını ayrı ayrı yazdım.
@@ -140,3 +138,27 @@ Case 5'teki kullanıcı paneline ek olarak, sadece giriş yapmış kullanıcıla
 - React'te tek bir sayfada birden fazla "görünüm" (tab/section) yönetmeyi ve bunlar arasında Framer Motion ile geçiş animasyonu yapmayı pekiştirdim.
 - CSS'te glassmorphism (buzlu cam) efekti ve 3D kart çevirme animasyonu (`rotateY`, `backface-visibility`) yapmayı öğrendim.
 
+- Kullanıcı Paneli Genişletmesi
+
+Case dokümanında istenen ama ilk teslimde eksik kalan kısımları sonradan panele ekledim.
+
+- Şifre değiştirme: Kullanıcı zaten giriş yapmışken, e-postasına kod gelmesini beklemeden doğrudan yeni bir şifre belirleyebiliyor (`supabase.auth.updateUser`).
+- Adres: Profil formuna bir adres alanı ekledim; bu adres hem kullanıcının kendi bilgisi olarak saklanıyor hem de mağazadan sipariş verirken teslimat bilgisi olarak kullanılıyor.
+- Geçmiş Siparişler: Mağazadaki "Satın Al" akışını, sadece sepeti boşaltmak yerine gerçekten bir `orders` tablosuna kayıt atacak şekilde güncelledim. Kullanıcı panelinde geçmiş siparişlerini (ürünler, tarih, toplam tutar) görebiliyor.
+- Destek Talepleri: Kullanıcının "yardım istiyorum" ya da "ürün iade etmek istiyorum" şeklinde bir talep oluşturup gönderebildiği, kendi taleplerinin durumunu (açık/çözüldü) görebildiği bir bölüm ekledim.
+
+- Yeni Bölüm: Yönetici (Admin) Paneli
+
+Case'de ayrıca istenen, sadece atölye sahibinin (benim hesabımın) erişebildiği tamamen yeni bir sayfa (`/admin`) ekledim. Bu sayfaya sadece giriş yapmış VE e-postası benim hesabımla eşleşen kullanıcı ulaşabiliyor; başka biri adres çubuğuna `/admin` yazsa bile ana sayfaya yönlendiriliyor.
+
+- Ürün (İçerik) Yönetimi: Artık Supabase'in Table Editor'üne elle girmeden, doğrudan site üzerinden yeni bir kar küresi kiti ekleyip mevcut ürünleri silebiliyorum.
+- Destek Talepleri Yönetimi: Tüm kullanıcıların gönderdiği destek taleplerini (kimden geldiği, konusu, mesajı) görüp "çözüldü" olarak işaretleyebiliyorum.
+- Siparişler: Tüm kullanıcıların verdiği siparişleri (kim, ne, ne zaman, ne kadar) tek bir listede görebiliyorum.
+- İstatistikler: "Bu ay kaç kişi üye oldu" (gerçek, veritabanından gelen bir sayı) ve "atölyeye bu ay toplam kaç kişi geldi" (elle girdiğim atölye tarihi + katılımcı sayısı kayıtlarının toplamı) bilgilerini görebiliyorum.
+
+- Arka Planda: Otomatik Üyelik Kaydı
+
+"Bu ay kaç kişi üye oldu" istatistiğinin doğru çalışması için bir sorunu çözmem gerekti: `profiles` tablosuna satır, kullanıcı ancak panelinde "Kaydet"e bastığında ekleniyordu — yani sadece kayıt olmuş ama profilini hiç düzenlememiş biri sayılmıyordu. Bunu çözmek için Supabase'de, her yeni kullanıcı kayıt olduğunda otomatik olarak `profiles` tablosuna bir satır ekleyen bir veritabanı tetikleyicisi (trigger) kurdum. Böylece istatistik gerçek ve güvenilir hale geldi.
+
+- En çok zorlandığım nokta: Bu kadar çok yeni tabloyu (orders, support_requests, workshop_sessions) birbirine karışmadan, her birinin doğru RLS kuralına (kullanıcı sadece kendi verisini görür, admin hepsini görür) sahip olacak şekilde kurmak oldu. Ayrıca destek taleplerinde ve siparişlerde "kim gönderdi" bilgisini kolayca görebilmek için ayrıca bir `user_email` sütunu eklemem gerektiğini fark ettim.
+- Öğrendiklerim: Postgres tetikleyicileri (trigger + function) ile bir tabloya otomatik veri eklemeyi, ve bir React uygulamasında "yönetici" ve "normal kullanıcı" gibi farklı yetki seviyelerine sahip sayfaları aynı proje içinde, tek bir e-posta kontrolüyle nasıl ayırabileceğimi öğrendim.

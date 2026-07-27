@@ -1388,8 +1388,8 @@ margin: 80px auto 0;
 
 .panel-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 28px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
 }
 
 @media (max-width: 720px) {
@@ -1399,17 +1399,152 @@ margin: 80px auto 0;
 }
 
 .panel-profile,
-.panel-messages {
+.panel-messages,
+.panel-password,
+.panel-orders,
+.panel-support {
   background: #fff;
   border-radius: 16px;
   padding: 22px;
 }
 
 .panel-profile h3,
-.panel-messages h3 {
+.panel-messages h3,
+.panel-password h3,
+.panel-orders h3,
+.panel-support h3 {
   margin: 0 0 14px;
   color: #082247;
   font-size: 18px;
+}
+
+.panel-password {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.panel-password input {
+  width: 100%;
+  border: 1px solid rgba(8, 34, 71, 0.16);
+  border-radius: 12px;
+  background: #fff;
+  color: #082247;
+  padding: 12px 14px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.panel-password button[type='submit'] {
+  border: 0;
+  border-radius: 999px;
+  background: #ef332b;
+  color: #fff;
+  padding: 10px 22px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.panel-orders ul,
+.support-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.panel-orders li {
+  border: 1px solid rgba(8, 34, 71, 0.12);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.panel-orders li strong {
+  display: block;
+  color: #e5b43b;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.panel-orders li p {
+  margin: 0 0 4px;
+  color: #082247;
+  font-size: 13px;
+}
+
+.panel-orders li span {
+  color: #ef332b;
+  font-weight: 900;
+}
+
+.panel-support form {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.panel-support select,
+.panel-support input,
+.panel-support textarea {
+  width: 100%;
+  border: 1px solid rgba(8, 34, 71, 0.16);
+  border-radius: 12px;
+  background: #fff;
+  color: #082247;
+  padding: 12px 14px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.panel-support textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.panel-support button[type='submit'] {
+  border: 0;
+  border-radius: 999px;
+  background: #ef332b;
+  color: #fff;
+  padding: 10px 22px;
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+  justify-self: start;
+}
+
+.support-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(8, 34, 71, 0.12);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #082247;
+}
+
+.support-status {
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  background: rgba(229, 180, 59, 0.2);
+  color: #92650a;
+}
+
+.support-status.resolved {
+  background: rgba(34, 197, 94, 0.18);
+  color: #15803d;
 }
 
 .panel-profile {
@@ -2298,4 +2433,194 @@ margin: 80px auto 0;
   justify-content: center;
   box-sizing: border-box;
   padding: 0;
+}
+
+/* Admin */
+.admin-section {
+  padding: 60px 40px 90px;
+  display: grid;
+  place-items: start center;
+}
+
+.admin-card {
+  width: 100%;
+  max-width: 900px;
+  background: #e9f6fb;
+  border-radius: 22px;
+  padding: 36px;
+  box-shadow: 0 24px 80px rgba(8, 34, 71, 0.18);
+  text-align: left;
+}
+
+.admin-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.admin-header span {
+  color: #e5b43b;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.admin-header h2 {
+  margin: 4px 0 0;
+  color: #082247;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 30px;
+}
+
+.admin-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.admin-tab {
+  border: 1px solid rgba(8, 34, 71, 0.16);
+  border-radius: 999px;
+  background: #fff;
+  color: #082247;
+  padding: 9px 16px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-tab.active {
+  background: #082247;
+  color: #fff;
+  border-color: #082247;
+}
+
+.admin-form {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+  margin-bottom: 22px;
+}
+
+.admin-form h3 {
+  margin: 0 0 4px;
+  color: #082247;
+  font-size: 16px;
+}
+
+.admin-form input {
+  border: 1px solid rgba(8, 34, 71, 0.16);
+  border-radius: 12px;
+  padding: 12px 14px;
+  font: inherit;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.admin-form button {
+  border: 0;
+  border-radius: 999px;
+  background: #ef332b;
+  color: #fff;
+  padding: 12px;
+  font-weight: 900;
+  cursor: pointer;
+  justify-self: start;
+  padding-inline: 22px;
+}
+
+.admin-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-row {
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-row-wide {
+  align-items: flex-start;
+}
+
+.admin-row div {
+  display: grid;
+  gap: 3px;
+}
+
+.admin-row strong {
+  color: #082247;
+  font-size: 14px;
+}
+
+.admin-row span {
+  color: rgba(8, 34, 71, 0.55);
+  font-size: 12px;
+}
+
+.admin-message {
+  margin: 2px 0;
+  color: rgba(8, 34, 71, 0.75);
+  font-size: 13px;
+  max-width: 480px;
+}
+
+.admin-remove {
+  border: 1px solid rgba(239, 51, 43, 0.3);
+  background: #fff;
+  color: #ef332b;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.admin-total {
+  color: #082247;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.admin-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.admin-stat-card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.admin-stat-card span {
+  color: rgba(8, 34, 71, 0.6);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-stat-card strong {
+  color: #082247;
+  font-size: 32px;
+  font-family: Georgia, 'Times New Roman', serif;
 }

@@ -91,6 +91,7 @@ Formu Supabase’teki `messages` tablosuna bağladım. Test sonucunda gönderile
 - Siteye ayrıca TR/EN dil değişimi ekledim; auth formundaki ve navbar'daki tüm metinler seçilen dile göre değişiyor.
 - En çok zorlandığım nokta, oturum durumunun (session) sayfa yenilendiğinde kaybolmaması için `supabase.auth.getSession()` ve `onAuthStateChange` dinleyicisini doğru kurgulamaktı.
 - Bu case'te Supabase Auth'un temel akışını (signUp/signIn/signOut, session yönetimi) ve kullanıcı durumuna göre arayüzü koşullu olarak değiştirmeyi öğrendim.
+
 GİREBİLMENİZ İÇİN E-POSTA VE ŞİFRE
 - nirem587@gmail.com-171717
 

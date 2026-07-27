@@ -1,138 +1,235 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { supabase } from './supabaseClient'
 
-const placeholderImages = [
-  'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720794/snowglobe_laglkr.png',
-]
+const placeholderImage =
+  'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720794/snowglobe_laglkr.png'
+
+const OWNER_EMAIL = 'nirem587@gmail.com'
 
 const shopText = {
   en: {
-    tabGuide: 'How it\u2019s made',
-    tabKits: 'Buy a kit',
-    tabMarket: 'Secondhand globes',
-    tabCart: 'Cart',
-    tabFavorites: 'Favorites',
+    myPanel: 'My Panel',
+    menuGuide: '🛠️ How it\u2019s made',
+    menuKits: '📦 Snow globe kits',
+    menuMakers: '🎨 Maker globes',
+    menuFavorites: '❤️ Favorites',
+    menuCart: '🛒 Cart & checkout',
     back: 'Back to site',
-    guideTitle: 'Make your own snow globe at home',
+
+    guideTitle: 'How our snow globes are made',
+    guideDesc: 'The same method we use in every workshop \u2014 a real glass dome, not a jam jar.',
+    guideImage: 'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720781/workshop-table_aydwhd.png',
     guideSteps: [
-      ['Choose your scene', 'Pick a small waterproof figure or miniature and a clean, empty glass jar with a tight lid.'],
-      ['Glue the figure down', 'Use waterproof glue to fix your figure to the inside of the jar lid. Let it dry completely.'],
-      ['Add glitter and glycerin', 'Fill the jar with distilled water, a spoon of glycerin (slows the fall of the snow) and a pinch of fine glitter.'],
-      ['Seal and flip', 'Screw the lid on tightly, seal the edge with glue, then carefully flip the jar over. Give it a shake and watch your world come alive.'],
+      { icon: '🧰', title: 'Choose your dome & base', desc: 'Every kit starts with a real glass dome and a solid wooden base \u2014 the same ones we use in the studio.' },
+      { icon: '🏡', title: 'Place the scene', desc: 'Fix your miniature figures and trees onto the base with waterproof glue, and let them set.' },
+      { icon: '💧', title: 'Fill the dome', desc: 'Fill the glass dome with our crystal-clear snow fluid, a pinch of glitter and fine snow flakes.' },
+      { icon: '🔒', title: 'Seal it shut', desc: 'Seal the dome onto the base, flip it over gently \u2014 and your little world comes to life.' },
     ],
-    kitsTitle: 'Order a kit, skip the shopping',
-    kitsDesc: 'Everything you need arrives in one box \u2014 dome, base, figures, glitter and snow fluid.',
+
+    kitsTitle: 'Snow globe kits',
+    kitsDesc: 'Everything you need arrives in one box.',
+    inside: 'Inside the box',
     addToCart: 'Add to cart',
-    addedToCart: 'Added',
-    materials: 'What\u2019s inside',
-    marketTitle: 'Globes made by our community',
-    marketDesc: 'Once-loved globes from people who came to a workshop and want to pass theirs on.',
+
+    makersTitle: 'Made by our makers',
+    makersDesc: 'Real globes, made by real hands at our workshop.',
     sellTitle: 'Sell your own globe',
     sellName: 'Title',
-    sellNote: 'A short note about it',
-    sellPrice: 'Price (\u00a3)',
-    sellImage: 'Image URL (optional)',
+    sellMaker: 'Made by (their name)',
+    sellNote: 'A sweet little note about it',
+    sellPrice: 'Price (£)',
+    sellImage: 'Photo URL (optional)',
     sellSubmit: 'List it for sale',
-    sellSuccess: 'Your globe is now listed.',
-    yourListing: 'Your listing',
+    sellSuccess: 'Your globe is now listed!',
+    yourListing: 'Yours',
     remove: 'Remove',
+    by: 'by',
+    viewMore: 'View',
+
+    favoritesTitle: 'Your favorites',
+    favoritesEmpty: 'Tap the heart on anything you love \u2014 it\u2019ll show up here.',
+
     cartTitle: 'Your cart',
     cartEmpty: 'Your cart is empty.',
-    quantity: 'Qty',
-    checkoutButton: 'Proceed to checkout',
     total: 'Total',
-    favoritesTitle: 'Your favorites',
-    favoritesEmpty: 'Nothing saved yet \u2014 tap the heart on anything you like.',
-    checkoutTitle: 'Confirm your order',
-    checkoutDesc: 'This is a preview checkout \u2014 no real payment is taken.',
-    fullName: 'Full name',
-    address: 'Delivery address',
+    checkout: 'Checkout',
+
+    checkoutTitle: 'Delivery & payment',
+    checkoutNote: 'A preview checkout \u2014 no real payment is taken.',
+    firstName: 'First name',
+    lastName: 'Last name',
+    address: 'Address',
     city: 'City',
-    postal: 'Postal code',
-    paymentMethod: 'Payment method',
-    payCard: 'Credit card',
-    payCash: 'Cash on delivery',
-    placeOrder: 'Place order',
-    orderSuccess: 'Thank you! Your order has been placed.',
-    backToCart: 'Back to cart',
-    seller: 'Seller',
+    phone: 'Phone',
+    cardNumber: 'Card number',
+    cardName: 'Name on card',
+    expiry: 'MM/YY',
+    cvc: 'CVC',
+    payButton: 'Complete payment',
+    orderSuccess: 'Payment complete!',
+    orderSuccessDesc: 'Your little world is on its way.',
+    closeModal: 'Close',
   },
   tr: {
-    tabGuide: 'Nasıl yapılır',
-    tabKits: 'Kit satın al',
-    tabMarket: 'İkinci el küreler',
-    tabCart: 'Sepet',
-    tabFavorites: 'Favoriler',
+    myPanel: 'Hesabım',
+    menuGuide: '🛠️ Kar Küresi Nasıl Yapılır?',
+    menuKits: '📦 Kar Küresi Kitleri',
+    menuMakers: '🎨 Üretici Kar Küreleri',
+    menuFavorites: '❤️ Favorilerim',
+    menuCart: '🛒 Sepetim ve Ödeme',
     back: 'Siteye dön',
-    guideTitle: 'Evde kendi kar küreni yap',
+
+    guideTitle: 'Kar kürelerimiz nasıl yapılıyor',
+    guideDesc: 'Her atölyede kullandığımız gerçek yöntem \u2014 reçel kavanozu değil, gerçek bir cam kubbe.',
+    guideImage: 'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720781/workshop-table_aydwhd.png',
     guideSteps: [
-      ['Sahneni seç', 'Küçük, su geçirmez bir figür ya da minyatür ve sıkıca kapanan temiz, boş bir cam kavanoz seç.'],
-      ['Figürü yapıştır', 'Su geçirmez yapıştırıcıyla figürünü kavanozun kapağının iç tarafına sabitle. Tamamen kurumasını bekle.'],
-      ['Gliter ve gliserin ekle', 'Kavanozu saf suyla doldur, bir kaşık gliserin (karın düşüşünü yavaşlatır) ve bir tutam ince gliter ekle.'],
-      ['Kapat ve çevir', 'Kapağı sıkıca kapat, kenarını yapıştırıcıyla mühürle, sonra kavanozu dikkatlice ters çevir. Salla ve dünyanın canlanmasını izle.'],
+      { icon: '🧰', title: 'Kubbe ve tabanı seç', desc: 'Her kit stüdyomuzda kullandığımızla aynı, gerçek bir cam kubbe ve sağlam ahşap bir tabanla başlıyor.' },
+      { icon: '🏡', title: 'Sahneni yerleştir', desc: 'Minyatür figürlerini ve ağaçlarını su geçirmez yapıştırıcıyla tabana sabitle, kurumasını bekle.' },
+      { icon: '💧', title: 'Kubbeyi doldur', desc: 'Cam kubbeyi berrak kar sıvımızla, bir tutam gliterle ve ince kar taneleriyle doldur.' },
+      { icon: '🔒', title: 'Mühürle', desc: 'Kubbeyi tabana sıkıca mühürle, nazikçe ters çevir \u2014 küçük dünyan hayat buluyor.' },
     ],
-    kitsTitle: 'Kit sipariş et, alışverişle uğraşma',
-    kitsDesc: 'İhtiyacın olan her şey tek kutuda geliyor \u2014 kubbe, taban, figürler, gliter ve kar sıvısı.',
-    addToCart: 'Sepete ekle',
-    addedToCart: 'Eklendi',
-    materials: 'İçinde neler var',
-    marketTitle: 'Topluluğumuzun yaptığı küreler',
-    marketDesc: 'Atölyeye gelip kendi küresini yapan ve onu bir başkasına devretmek isteyenlerin küreleri.',
+
+    kitsTitle: 'Kar Küresi Kitleri',
+    kitsDesc: 'İhtiyacın olan her şey tek kutuda.',
+    inside: 'Kutunun içinde',
+    addToCart: 'Sepete Ekle',
+
+    makersTitle: 'Üreticilerimizin elinden',
+    makersDesc: 'Atölyemizde gerçek insanların elleriyle yapılmış gerçek küreler.',
     sellTitle: 'Kendi küreni sat',
     sellName: 'Başlık',
-    sellNote: 'Kısa bir not',
-    sellPrice: 'Fiyat (\u00a3)',
-    sellImage: 'Görsel URL (opsiyonel)',
+    sellMaker: 'Kimin yaptığı (adı)',
+    sellNote: 'Tatlı ve samimi bir not',
+    sellPrice: 'Fiyat (£)',
+    sellImage: 'Fotoğraf URL (opsiyonel)',
     sellSubmit: 'Satışa çıkar',
-    sellSuccess: 'Küren artık satışta.',
-    yourListing: 'İlanın',
+    sellSuccess: 'Küren artık satışta!',
+    yourListing: 'Senin',
     remove: 'Kaldır',
-    cartTitle: 'Sepetin',
+    by: 'satıcı',
+    viewMore: 'Gör',
+
+    favoritesTitle: 'Favorilerim',
+    favoritesEmpty: 'Beğendiğin her şeyin kalbine dokun \u2014 burada toplanır.',
+
+    cartTitle: 'Sepetim',
     cartEmpty: 'Sepetin boş.',
-    quantity: 'Adet',
-    checkoutButton: 'Sepeti onayla',
     total: 'Toplam',
-    favoritesTitle: 'Favorilerin',
-    favoritesEmpty: 'Henüz bir şey kaydetmedin \u2014 beğendiğin şeylerin kalbine dokun.',
-    checkoutTitle: 'Siparişini onayla',
-    checkoutDesc: 'Bu bir önizleme ödeme ekranı \u2014 gerçek bir ödeme alınmaz.',
-    fullName: 'Ad Soyad',
-    address: 'Teslimat adresi',
+    checkout: 'Satın Al',
+
+    checkoutTitle: 'Teslimat ve Ödeme',
+    checkoutNote: 'Bu bir önizleme ödeme ekranı \u2014 gerçek bir ödeme alınmaz.',
+    firstName: 'Ad',
+    lastName: 'Soyad',
+    address: 'Adres',
     city: 'Şehir',
-    postal: 'Posta kodu',
-    paymentMethod: 'Ödeme yöntemi',
-    payCard: 'Kredi kartı',
-    payCash: 'Kapıda ödeme',
-    placeOrder: 'Siparişi tamamla',
-    orderSuccess: 'Teşekkürler! Siparişin alındı.',
-    backToCart: 'Sepete dön',
-    seller: 'Satıcı',
+    phone: 'Telefon',
+    cardNumber: 'Kart Numarası',
+    cardName: 'Kart Üzerindeki İsim',
+    expiry: 'AA/YY',
+    cvc: 'CVC',
+    payButton: 'Ödemeyi Tamamla',
+    orderSuccess: 'Ödeme tamamlandı!',
+    orderSuccessDesc: 'Küçük dünyan yola çıktı.',
+    closeModal: 'Kapat',
   },
 }
 
-function Shop({ session, language, onBack }) {
-  const s = shopText[language] || shopText.en
+const menuItems = [
+  ['guide', 'menuGuide'],
+  ['kits', 'menuKits'],
+  ['makers', 'menuMakers'],
+  ['favorites', 'menuFavorites'],
+  ['cart', 'menuCart'],
+]
 
-  const [view, setView] = useState('guide')
+function Snowfall() {
+  const flakes = useMemo(
+    () =>
+      Array.from({ length: 40 }).map(() => ({
+        left: Math.random() * 100,
+        size: 3 + Math.random() * 5,
+        duration: 8 + Math.random() * 10,
+        delay: Math.random() * 10,
+        drift: Math.random() * 40 - 20,
+      })),
+    []
+  )
+
+  return (
+    <div className="shop-snowfall" aria-hidden="true">
+      {flakes.map((flake, index) => (
+        <motion.span
+          key={index}
+          className="shop-snowflake"
+          style={{ left: `${flake.left}%`, width: flake.size, height: flake.size }}
+          animate={{ y: ['-5vh', '105vh'], x: [0, flake.drift] }}
+          transition={{ duration: flake.duration, delay: flake.delay, repeat: Infinity, ease: 'linear' }}
+        />
+      ))}
+    </div>
+  )
+}
+
+function CardPreview({ card, flipped, t }) {
+  const digits = card.number.replace(/\D/g, '').padEnd(16, '•')
+  const grouped = digits.match(/.{1,4}/g)?.join(' ') || digits
+
+  return (
+    <div className="card-preview-wrap">
+      <motion.div
+        className="card-preview"
+        animate={{ rotateY: flipped ? 180 : 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <div className="card-face card-front">
+          <div className="card-chip">▢▢</div>
+          <div className="card-number">{grouped}</div>
+          <div className="card-bottom">
+            <div>
+              <span>{t.cardName}</span>
+              <strong>{card.name || '••••••••'}</strong>
+            </div>
+            <div>
+              <span>{t.expiry}</span>
+              <strong>{card.expiry || '••/••'}</strong>
+            </div>
+          </div>
+        </div>
+        <div className="card-face card-back">
+          <div className="card-stripe" />
+          <div className="card-cvc">{card.cvc || '•••'}</div>
+        </div>
+      </motion.div>
+    </div>
+  )
+}
+
+function Shop({ session, language, onLanguageChange, onBack }) {
+  const t = shopText[language] || shopText.en
+
+  const [activeSection, setActiveSection] = useState('guide')
+  const [menuOpen, setMenuOpen] = useState(false)
+
   const [kits, setKits] = useState([])
-  const [secondhand, setSecondhand] = useState([])
+  const [makerGlobes, setMakerGlobes] = useState([])
   const [cartItems, setCartItems] = useState([])
   const [favoriteItems, setFavoriteItems] = useState([])
-  const [status, setStatus] = useState('')
 
-  const [listingForm, setListingForm] = useState({ title: '', note: '', price: '', image_url: '' })
-  const [checkoutForm, setCheckoutForm] = useState({
-    fullName: '',
-    address: '',
-    city: '',
-    postal: '',
-    paymentMethod: 'card',
-  })
-  const [orderPlaced, setOrderPlaced] = useState(false)
+  const [selectedMaker, setSelectedMaker] = useState(null)
+  const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [orderSuccess, setOrderSuccess] = useState(false)
+
+  const [listingForm, setListingForm] = useState({ title: '', maker_name: '', note: '', price: '', image_url: '' })
+  const [listingStatus, setListingStatus] = useState('')
+
+  const [addressForm, setAddressForm] = useState({ firstName: '', lastName: '', address: '', city: '', phone: '' })
+  const [cardForm, setCardForm] = useState({ number: '', name: '', expiry: '', cvc: '' })
+  const [cardFlipped, setCardFlipped] = useState(false)
 
   const loadShopData = async () => {
-    const [kitsRes, secondhandRes, cartRes, favRes] = await Promise.all([
+    const [kitsRes, globesRes, cartRes, favRes] = await Promise.all([
       supabase.from('kits').select('*').order('id'),
       supabase.from('secondhand_globes').select('*').order('created_at', { ascending: false }),
       supabase.from('cart_items').select('*').eq('user_id', session.user.id),
@@ -140,7 +237,7 @@ function Shop({ session, language, onBack }) {
     ])
 
     if (kitsRes.data) setKits(kitsRes.data)
-    if (secondhandRes.data) setSecondhand(secondhandRes.data)
+    if (globesRes.data) setMakerGlobes(globesRes.data)
     if (cartRes.data) setCartItems(cartRes.data)
     if (favRes.data) setFavoriteItems(favRes.data)
   }
@@ -151,7 +248,7 @@ function Shop({ session, language, onBack }) {
   }, [])
 
   const findItem = (itemType, itemId) => {
-    const list = itemType === 'kit' ? kits : secondhand
+    const list = itemType === 'kit' ? kits : makerGlobes
     return list.find((entry) => entry.id === itemId)
   }
 
@@ -181,11 +278,7 @@ function Shop({ session, language, onBack }) {
 
   const updateQuantity = async (cartItemId, quantity) => {
     if (quantity < 1) return
-    const { data } = await supabase
-      .from('cart_items')
-      .update({ quantity })
-      .eq('id', cartItemId)
-      .select()
+    const { data } = await supabase.from('cart_items').update({ quantity }).eq('id', cartItemId).select()
     if (data) setCartItems((current) => current.map((c) => (c.id === cartItemId ? data[0] : c)))
   }
 
@@ -218,13 +311,14 @@ function Shop({ session, language, onBack }) {
 
   const submitListing = async (event) => {
     event.preventDefault()
-    setStatus('...')
+    setListingStatus('...')
 
     const { data, error } = await supabase
       .from('secondhand_globes')
       .insert({
         seller_id: session.user.id,
         title: listingForm.title,
+        maker_name: listingForm.maker_name,
         note: listingForm.note,
         price: Number(listingForm.price),
         image_url: listingForm.image_url,
@@ -232,23 +326,34 @@ function Shop({ session, language, onBack }) {
       .select()
 
     if (error) {
-      setStatus('error')
+      setListingStatus('error')
       return
     }
 
-    setSecondhand((current) => [data[0], ...current])
-    setListingForm({ title: '', note: '', price: '', image_url: '' })
-    setStatus(s.sellSuccess)
+    setMakerGlobes((current) => [data[0], ...current])
+    setListingForm({ title: '', maker_name: '', note: '', price: '', image_url: '' })
+    setListingStatus(t.sellSuccess)
   }
 
   const removeListing = async (id) => {
     await supabase.from('secondhand_globes').delete().eq('id', id)
-    setSecondhand((current) => current.filter((item) => item.id !== id))
+    setMakerGlobes((current) => current.filter((item) => item.id !== id))
   }
 
-  const handleCheckoutChange = (event) => {
+  const cartTotal = cartItems.reduce((sum, cartItem) => {
+    const item = findItem(cartItem.item_type, cartItem.item_id)
+    return sum + (item ? item.price * cartItem.quantity : 0)
+  }, 0)
+
+  const handleCardChange = (event) => {
     const { name, value } = event.target
-    setCheckoutForm((current) => ({ ...current, [name]: value }))
+    setCardForm((current) => ({ ...current, [name]: value }))
+    if (name === 'cvc') setCardFlipped(true)
+  }
+
+  const handleAddressChange = (event) => {
+    const { name, value } = event.target
+    setAddressForm((current) => ({ ...current, [name]: value }))
   }
 
   const handlePlaceOrder = async (event) => {
@@ -257,278 +362,367 @@ function Shop({ session, language, onBack }) {
       await supabase.from('cart_items').delete().eq('id', item.id)
     }
     setCartItems([])
-    setOrderPlaced(true)
+    setOrderSuccess(true)
   }
 
-  const cartTotal = cartItems.reduce((sum, cartItem) => {
-    const item = findItem(cartItem.item_type, cartItem.item_id)
-    return sum + (item ? item.price * cartItem.quantity : 0)
-  }, 0)
-
-  const tabs = [
-    ['guide', s.tabGuide],
-    ['kits', s.tabKits],
-    ['market', s.tabMarket],
-    ['cart', `${s.tabCart}${cartItems.length ? ` (${cartItems.length})` : ''}`],
-    ['favorites', `${s.tabFavorites}${favoriteItems.length ? ` (${favoriteItems.length})` : ''}`],
-  ]
+  const closeCheckout = () => {
+    setCheckoutOpen(false)
+    setOrderSuccess(false)
+    setCardFlipped(false)
+  }
 
   return (
-    <section className="shop-section">
-      <div className="shop-card">
-        <div className="shop-header">
-          <div>
-            <span>The Glass Worlds</span>
-            <h2>{s.tabGuide === 'Nasıl yapılır' ? 'Mağaza' : 'Shop'}</h2>
-          </div>
-          <motion.button
-            className="panel-back"
-            type="button"
-            whileHover={{ scale: 1.06 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={onBack}
-          >
-            {s.back}
-          </motion.button>
-        </div>
+    <div className="shop-app">
+      <Snowfall />
 
-        <div className="shop-tabs">
-          {tabs.map(([key, label]) => (
+      <div className="shop-shell">
+        <header className="shop-topbar">
+          <div className="shop-brand">
+            <span className="shop-brand-dot" />
+            The Glass Worlds
+          </div>
+
+          <div className="shop-topbar-actions">
+            {onLanguageChange && (
+              <motion.button
+                className="shop-lang-switch"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => onLanguageChange(language === 'en' ? 'tr' : 'en')}
+              >
+                {language === 'en' ? 'TR' : 'EN'}
+              </motion.button>
+            )}
+
             <motion.button
-              key={key}
-              type="button"
-              className={`shop-tab ${view === key ? 'active' : ''}`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                setView(key)
-                setOrderPlaced(false)
-              }}
+              className="shop-lang"
+              whileHover={{ scale: 1.08 }}
+              whileTap={{ scale: 0.92 }}
+              onClick={onBack}
             >
-              {label}
+              {t.back}
             </motion.button>
-          ))}
-        </div>
+
+            <div className="shop-menu-wrap">
+              <motion.button
+                className="shop-panel-btn"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {t.myPanel}
+              </motion.button>
+
+              <motion.button
+                className="shop-dots"
+                whileHover={{ scale: 1.15 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                •••
+              </motion.button>
+
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    className="shop-dropdown"
+                    initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.18 }}
+                  >
+                    {menuItems.map(([key, labelKey]) => (
+                      <button
+                        key={key}
+                        className={activeSection === key ? 'active' : ''}
+                        onClick={() => {
+                          setActiveSection(key)
+                          setMenuOpen(false)
+                        }}
+                      >
+                        {t[labelKey]}
+                      </button>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </div>
+        </header>
 
         <AnimatePresence mode="wait">
-          {view === 'guide' && (
-            <motion.div
+          {activeSection === 'guide' && (
+            <motion.section
               key="guide"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3 }}
-              className="shop-panel"
+              className="shop-view"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.35 }}
             >
-              <h3>{s.guideTitle}</h3>
+              <div className="shop-view-heading">
+                <h2>{t.guideTitle}</h2>
+                <p>{t.guideDesc}</p>
+              </div>
+
+              <motion.img
+                className="guide-hero-photo"
+                src={t.guideImage}
+                alt="Workshop table with glass dome and wooden base"
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5 }}
+              />
+
               <motion.div
-                className="guide-steps"
+                className="guide-grid"
                 initial="hidden"
                 animate="visible"
                 variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12 } } }}
               >
-                {s.guideSteps.map((step, index) => (
+                {t.guideSteps.map((step, index) => (
                   <motion.div
-                    className="guide-step"
-                    key={step[0]}
-                    variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                    className="glass-card guide-card"
+                    key={step.title}
+                    variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } }}
+                    whileHover={{ y: -8, scale: 1.02 }}
                   >
-                    <span>{index + 1}</span>
-                    <div>
-                      <h4>{step[0]}</h4>
-                      <p>{step[1]}</p>
-                    </div>
+                    <span className="guide-icon">{step.icon}</span>
+                    <span className="guide-step-no">0{index + 1}</span>
+                    <h3>{step.title}</h3>
+                    <p>{step.desc}</p>
                   </motion.div>
                 ))}
               </motion.div>
-            </motion.div>
+            </motion.section>
           )}
 
-          {view === 'kits' && (
-            <motion.div
+          {activeSection === 'kits' && (
+            <motion.section
               key="kits"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3 }}
-              className="shop-panel"
+              className="shop-view"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.35 }}
             >
-              <h3>{s.kitsTitle}</h3>
-              <p className="shop-desc">{s.kitsDesc}</p>
+              <div className="shop-view-heading">
+                <h2>{t.kitsTitle}</h2>
+                <p>{t.kitsDesc}</p>
+              </div>
 
               <motion.div
-                className="product-grid"
+                className="kit-grid"
                 initial="hidden"
                 animate="visible"
                 variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
               >
                 {kits.map((kit) => (
                   <motion.div
-                    className="product-card"
+                    className="glass-card kit-card"
                     key={kit.id}
-                    variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                    variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } }}
                     whileHover={{ y: -6 }}
                   >
-                    <div className="product-image">
-                      <img src={kit.image_url || placeholderImages[0]} alt={kit.name} />
+                    <div className="kit-box">
+                      <img src={kit.image_url || placeholderImage} alt={kit.name} />
                       <motion.button
-                        type="button"
-                        className={`fav-heart ${isFavorite('kit', kit.id) ? 'active' : ''}`}
-                        whileHover={{ scale: 1.15 }}
-                        whileTap={{ scale: 0.9 }}
+                        className={`heart-btn ${isFavorite('kit', kit.id) ? 'active' : ''}`}
+                        whileTap={{ scale: [1, 1.4, 1] }}
                         onClick={() => toggleFavorite('kit', kit.id)}
                       >
-                        ♥
+                        ❤
                       </motion.button>
                     </div>
-                    <h4>{kit.name}</h4>
-                    <p className="product-desc">{kit.description}</p>
+
+                    <h3>{kit.name}</h3>
+                    <p className="kit-desc">{kit.description}</p>
+
                     {kit.materials && (
-                      <p className="product-materials">
-                        <strong>{s.materials}:</strong> {kit.materials}
-                      </p>
+                      <div className="kit-materials">
+                        <span>{t.inside}</span>
+                        <p>{kit.materials}</p>
+                      </div>
                     )}
-                    <div className="product-footer">
-                      <span className="product-price">£{kit.price}</span>
+
+                    <div className="kit-footer">
+                      <strong>£{kit.price}</strong>
                       <motion.button
-                        type="button"
                         whileHover={{ scale: 1.06 }}
                         whileTap={{ scale: 0.94 }}
                         onClick={() => addToCart('kit', kit.id)}
                       >
-                        {s.addToCart}
+                        {t.addToCart}
                       </motion.button>
                     </div>
                   </motion.div>
                 ))}
               </motion.div>
-            </motion.div>
+            </motion.section>
           )}
 
-          {view === 'market' && (
-            <motion.div
-              key="market"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3 }}
-              className="shop-panel"
+          {activeSection === 'makers' && (
+            <motion.section
+              key="makers"
+              className="shop-view"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.35 }}
             >
-              <h3>{s.marketTitle}</h3>
-              <p className="shop-desc">{s.marketDesc}</p>
+              <div className="shop-view-heading">
+                <h2>{t.makersTitle}</h2>
+                <p>{t.makersDesc}</p>
+              </div>
 
+              {session.user.email === OWNER_EMAIL && (
               <motion.form
-                className="sell-form"
+                className="glass-card sell-form"
                 onSubmit={submitListing}
-                initial={{ opacity: 0, y: 12 }}
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
+                transition={{ delay: 0.1 }}
               >
-                <h4>{s.sellTitle}</h4>
-                <input
-                  type="text"
-                  name="title"
-                  placeholder={s.sellName}
-                  value={listingForm.title}
-                  onChange={handleListingChange}
-                  required
-                />
-                <input
-                  type="text"
-                  name="note"
-                  placeholder={s.sellNote}
-                  value={listingForm.note}
-                  onChange={handleListingChange}
-                />
-                <input
-                  type="number"
-                  name="price"
-                  min="0"
-                  step="0.01"
-                  placeholder={s.sellPrice}
-                  value={listingForm.price}
-                  onChange={handleListingChange}
-                  required
-                />
-                <input
-                  type="text"
-                  name="image_url"
-                  placeholder={s.sellImage}
-                  value={listingForm.image_url}
-                  onChange={handleListingChange}
-                />
+                <h3>{t.sellTitle}</h3>
+                <input name="title" placeholder={t.sellName} value={listingForm.title} onChange={handleListingChange} required />
+                <input name="maker_name" placeholder={t.sellMaker} value={listingForm.maker_name} onChange={handleListingChange} required />
+                <input name="note" placeholder={t.sellNote} value={listingForm.note} onChange={handleListingChange} />
+                <input name="price" type="number" min="0" step="0.01" placeholder={t.sellPrice} value={listingForm.price} onChange={handleListingChange} required />
+                <input name="image_url" placeholder={t.sellImage} value={listingForm.image_url} onChange={handleListingChange} />
                 <motion.button type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  {s.sellSubmit}
+                  {t.sellSubmit}
                 </motion.button>
-                {status && <p className="shop-status">{status}</p>}
+                {listingStatus && <p className="shop-status">{listingStatus}</p>}
               </motion.form>
+              )}
 
               <motion.div
-                className="product-grid"
+                className="kit-grid"
                 initial="hidden"
                 animate="visible"
                 variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
               >
-                {secondhand.map((item) => (
+                {makerGlobes.map((globe) => (
                   <motion.div
-                    className="product-card"
-                    key={item.id}
-                    variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                    className="glass-card kit-card"
+                    key={globe.id}
+                    variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } }}
                     whileHover={{ y: -6 }}
                   >
-                    <div className="product-image">
-                      <img src={item.image_url || placeholderImages[0]} alt={item.title} />
+                    <div className="kit-box" onClick={() => setSelectedMaker(globe)}>
+                      <img src={globe.image_url || placeholderImage} alt={globe.title} />
                       <motion.button
-                        type="button"
-                        className={`fav-heart ${isFavorite('secondhand', item.id) ? 'active' : ''}`}
-                        whileHover={{ scale: 1.15 }}
-                        whileTap={{ scale: 0.9 }}
-                        onClick={() => toggleFavorite('secondhand', item.id)}
+                        className={`heart-btn ${isFavorite('secondhand', globe.id) ? 'active' : ''}`}
+                        whileTap={{ scale: [1, 1.4, 1] }}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          toggleFavorite('secondhand', globe.id)
+                        }}
                       >
-                        ♥
+                        ❤
                       </motion.button>
                     </div>
-                    <h4>{item.title}</h4>
-                    {item.note && <p className="product-desc">{item.note}</p>}
-                    <div className="product-footer">
-                      <span className="product-price">£{item.price}</span>
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.06 }}
-                        whileTap={{ scale: 0.94 }}
-                        onClick={() => addToCart('secondhand', item.id)}
-                      >
-                        {s.addToCart}
+
+                    <h3>{globe.title}</h3>
+                    {globe.maker_name && (
+                      <p className="kit-desc">
+                        {t.by} {globe.maker_name}
+                      </p>
+                    )}
+
+                    <div className="kit-footer">
+                      <strong>£{globe.price}</strong>
+                      <motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.94 }} onClick={() => setSelectedMaker(globe)}>
+                        {t.viewMore}
                       </motion.button>
                     </div>
-                    {item.seller_id === session.user.id && (
-                      <button
-                        type="button"
-                        className="remove-listing"
-                        onClick={() => removeListing(item.id)}
-                      >
-                        {s.remove}
+
+                    {globe.seller_id === session.user.id && (
+                      <button type="button" className="remove-link" onClick={() => removeListing(globe.id)}>
+                        {t.remove}
                       </button>
                     )}
                   </motion.div>
                 ))}
               </motion.div>
-            </motion.div>
+            </motion.section>
           )}
 
-          {view === 'cart' && !orderPlaced && (
-            <motion.div
-              key="cart"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3 }}
-              className="shop-panel"
+          {activeSection === 'favorites' && (
+            <motion.section
+              key="favorites"
+              className="shop-view"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.35 }}
             >
-              <h3>{s.cartTitle}</h3>
+              <div className="shop-view-heading">
+                <h2>{t.favoritesTitle}</h2>
+              </div>
+
+              {favoriteItems.length === 0 ? (
+                <p className="shop-empty">{t.favoritesEmpty}</p>
+              ) : (
+                <motion.div
+                  className="kit-grid"
+                  initial="hidden"
+                  animate="visible"
+                  variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
+                >
+                  {favoriteItems.map((fav) => {
+                    const item = findItem(fav.item_type, fav.item_id)
+                    if (!item) return null
+                    return (
+                      <motion.div
+                        className="glass-card kit-card"
+                        key={fav.id}
+                        variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0 } }}
+                        whileHover={{ y: -6 }}
+                      >
+                        <div className="kit-box">
+                          <img src={item.image_url || placeholderImage} alt={item.name || item.title} />
+                          <motion.button
+                            className="heart-btn active"
+                            whileTap={{ scale: [1, 1.4, 1] }}
+                            onClick={() => toggleFavorite(fav.item_type, fav.item_id)}
+                          >
+                            ❤
+                          </motion.button>
+                        </div>
+                        <h3>{item.name || item.title}</h3>
+                        <div className="kit-footer">
+                          <strong>£{item.price}</strong>
+                          <motion.button
+                            whileHover={{ scale: 1.06 }}
+                            whileTap={{ scale: 0.94 }}
+                            onClick={() => addToCart(fav.item_type, fav.item_id)}
+                          >
+                            {t.addToCart}
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    )
+                  })}
+                </motion.div>
+              )}
+            </motion.section>
+          )}
+
+          {activeSection === 'cart' && (
+            <motion.section
+              key="cart"
+              className="shop-view"
+              initial={{ opacity: 0, x: 24 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -24 }}
+              transition={{ duration: 0.35 }}
+            >
+              <div className="shop-view-heading">
+                <h2>{t.cartTitle}</h2>
+              </div>
 
               {cartItems.length === 0 ? (
-                <p className="shop-empty">{s.cartEmpty}</p>
+                <p className="shop-empty">{t.cartEmpty}</p>
               ) : (
                 <>
                   <motion.div
@@ -542,215 +736,183 @@ function Shop({ session, language, onBack }) {
                       if (!item) return null
                       return (
                         <motion.div
-                          className="cart-row"
+                          className="glass-card cart-row"
                           key={cartItem.id}
-                          variants={{ hidden: { opacity: 0, x: 16 }, visible: { opacity: 1, x: 0 } }}
+                          variants={{ hidden: { opacity: 0, x: 20 }, visible: { opacity: 1, x: 0 } }}
                         >
-                          <img src={item.image_url || placeholderImages[0]} alt={item.name || item.title} />
+                          <img src={item.image_url || placeholderImage} alt={item.name || item.title} />
                           <div className="cart-row-info">
                             <strong>{item.name || item.title}</strong>
                             <span>£{item.price}</span>
                           </div>
                           <div className="cart-qty">
-                            <button type="button" onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}>
-                              −
-                            </button>
+                            <button onClick={() => updateQuantity(cartItem.id, cartItem.quantity - 1)}>−</button>
                             <span>{cartItem.quantity}</span>
-                            <button type="button" onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}>
-                              +
-                            </button>
+                            <button onClick={() => updateQuantity(cartItem.id, cartItem.quantity + 1)}>+</button>
                           </div>
-                          <button type="button" className="remove-listing" onClick={() => removeFromCart(cartItem.id)}>
-                            {s.remove}
+                          <button className="remove-link" onClick={() => removeFromCart(cartItem.id)}>
+                            {t.remove}
                           </button>
                         </motion.div>
                       )
                     })}
                   </motion.div>
 
-                  <div className="cart-summary">
-                    <span>{s.total}</span>
+                  <div className="glass-card cart-summary">
+                    <span>{t.total}</span>
                     <strong>£{cartTotal.toFixed(2)}</strong>
                   </div>
 
                   <motion.button
-                    type="button"
                     className="checkout-cta"
                     whileHover={{ scale: 1.04 }}
                     whileTap={{ scale: 0.96 }}
-                    onClick={() => setView('checkout')}
+                    onClick={() => setCheckoutOpen(true)}
                   >
-                    {s.checkoutButton}
+                    {t.checkout}
                   </motion.button>
                 </>
               )}
-            </motion.div>
-          )}
-
-          {view === 'checkout' && !orderPlaced && (
-            <motion.form
-              key="checkout"
-              className="shop-panel checkout-form"
-              onSubmit={handlePlaceOrder}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3 }}
-            >
-              <h3>{s.checkoutTitle}</h3>
-              <p className="shop-desc">{s.checkoutDesc}</p>
-
-              <input
-                type="text"
-                name="fullName"
-                placeholder={s.fullName}
-                value={checkoutForm.fullName}
-                onChange={handleCheckoutChange}
-                required
-              />
-              <input
-                type="text"
-                name="address"
-                placeholder={s.address}
-                value={checkoutForm.address}
-                onChange={handleCheckoutChange}
-                required
-              />
-              <div className="checkout-row">
-                <input
-                  type="text"
-                  name="city"
-                  placeholder={s.city}
-                  value={checkoutForm.city}
-                  onChange={handleCheckoutChange}
-                  required
-                />
-                <input
-                  type="text"
-                  name="postal"
-                  placeholder={s.postal}
-                  value={checkoutForm.postal}
-                  onChange={handleCheckoutChange}
-                  required
-                />
-              </div>
-
-              <div className="payment-method">
-                <span>{s.paymentMethod}</span>
-                <label>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="card"
-                    checked={checkoutForm.paymentMethod === 'card'}
-                    onChange={handleCheckoutChange}
-                  />
-                  {s.payCard}
-                </label>
-                <label>
-                  <input
-                    type="radio"
-                    name="paymentMethod"
-                    value="cash"
-                    checked={checkoutForm.paymentMethod === 'cash'}
-                    onChange={handleCheckoutChange}
-                  />
-                  {s.payCash}
-                </label>
-              </div>
-
-              <div className="cart-summary">
-                <span>{s.total}</span>
-                <strong>£{cartTotal.toFixed(2)}</strong>
-              </div>
-
-              <motion.button type="submit" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-                {s.placeOrder}
-              </motion.button>
-
-              <button type="button" className="auth-link-button" onClick={() => setView('cart')}>
-                {s.backToCart}
-              </button>
-            </motion.form>
-          )}
-
-          {orderPlaced && (view === 'cart' || view === 'checkout') && (
-            <motion.div
-              key="success"
-              className="shop-panel order-success"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 16 }}
-            >
-              <span>✓</span>
-              <h3>{s.orderSuccess}</h3>
-            </motion.div>
-          )}
-
-          {view === 'favorites' && (
-            <motion.div
-              key="favorites"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.3 }}
-              className="shop-panel"
-            >
-              <h3>{s.favoritesTitle}</h3>
-
-              {favoriteItems.length === 0 ? (
-                <p className="shop-empty">{s.favoritesEmpty}</p>
-              ) : (
-                <motion.div
-                  className="product-grid"
-                  initial="hidden"
-                  animate="visible"
-                  variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.1 } } }}
-                >
-                  {favoriteItems.map((fav) => {
-                    const item = findItem(fav.item_type, fav.item_id)
-                    if (!item) return null
-                    return (
-                      <motion.div
-                        className="product-card"
-                        key={fav.id}
-                        variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
-                        whileHover={{ y: -6 }}
-                      >
-                        <div className="product-image">
-                          <img src={item.image_url || placeholderImages[0]} alt={item.name || item.title} />
-                          <motion.button
-                            type="button"
-                            className="fav-heart active"
-                            whileHover={{ scale: 1.15 }}
-                            whileTap={{ scale: 0.9 }}
-                            onClick={() => toggleFavorite(fav.item_type, fav.item_id)}
-                          >
-                            ♥
-                          </motion.button>
-                        </div>
-                        <h4>{item.name || item.title}</h4>
-                        <div className="product-footer">
-                          <span className="product-price">£{item.price}</span>
-                          <motion.button
-                            type="button"
-                            whileHover={{ scale: 1.06 }}
-                            whileTap={{ scale: 0.94 }}
-                            onClick={() => addToCart(fav.item_type, fav.item_id)}
-                          >
-                            {s.addToCart}
-                          </motion.button>
-                        </div>
-                      </motion.div>
-                    )
-                  })}
-                </motion.div>
-              )}
-            </motion.div>
+            </motion.section>
           )}
         </AnimatePresence>
       </div>
-    </section>
+
+      <AnimatePresence>
+        {selectedMaker && (
+          <motion.div
+            className="shop-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setSelectedMaker(null)}
+          >
+            <motion.div
+              className="glass-card maker-modal"
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <button className="modal-close" onClick={() => setSelectedMaker(null)}>
+                ✕
+              </button>
+              <img className="maker-photo" src={selectedMaker.image_url || placeholderImage} alt={selectedMaker.title} />
+              <h3>{selectedMaker.title}</h3>
+              <div className="maker-by">
+                <span className="maker-avatar-fallback">
+                  {(selectedMaker.maker_name || '?')[0]?.toUpperCase()}
+                </span>
+                <span>{selectedMaker.maker_name || t.by}</span>
+              </div>
+              {selectedMaker.note && <p className="maker-note">“{selectedMaker.note}”</p>}
+              <div className="kit-footer">
+                <strong>£{selectedMaker.price}</strong>
+                <motion.button
+                  whileHover={{ scale: 1.06 }}
+                  whileTap={{ scale: 0.94 }}
+                  onClick={() => {
+                    addToCart('secondhand', selectedMaker.id)
+                    setSelectedMaker(null)
+                  }}
+                >
+                  {t.addToCart}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {checkoutOpen && (
+          <motion.div
+            className="shop-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="glass-card checkout-modal"
+              initial={{ opacity: 0, scale: 0.92, y: 24 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.92, y: 24 }}
+              transition={{ type: 'spring', stiffness: 240, damping: 22 }}
+            >
+              {!orderSuccess ? (
+                <>
+                  <button className="modal-close" onClick={closeCheckout}>
+                    ✕
+                  </button>
+                  <h3>{t.checkoutTitle}</h3>
+                  <p className="shop-status" style={{ marginBottom: 14 }}>{t.checkoutNote}</p>
+
+                  <CardPreview card={cardForm} flipped={cardFlipped} t={t} />
+
+                  <form className="checkout-form" onSubmit={handlePlaceOrder}>
+                    <div className="checkout-row">
+                      <input name="firstName" placeholder={t.firstName} value={addressForm.firstName} onChange={handleAddressChange} required />
+                      <input name="lastName" placeholder={t.lastName} value={addressForm.lastName} onChange={handleAddressChange} required />
+                    </div>
+                    <input name="address" placeholder={t.address} value={addressForm.address} onChange={handleAddressChange} required />
+                    <div className="checkout-row">
+                      <input name="city" placeholder={t.city} value={addressForm.city} onChange={handleAddressChange} required />
+                      <input name="phone" placeholder={t.phone} value={addressForm.phone} onChange={handleAddressChange} required />
+                    </div>
+
+                    <input
+                      name="number"
+                      placeholder={t.cardNumber}
+                      value={cardForm.number}
+                      maxLength={19}
+                      onFocus={() => setCardFlipped(false)}
+                      onChange={handleCardChange}
+                      required
+                    />
+                    <input name="name" placeholder={t.cardName} value={cardForm.name} onFocus={() => setCardFlipped(false)} onChange={handleCardChange} required />
+                    <div className="checkout-row">
+                      <input name="expiry" placeholder={t.expiry} value={cardForm.expiry} onFocus={() => setCardFlipped(false)} onChange={handleCardChange} required />
+                      <input name="cvc" placeholder={t.cvc} value={cardForm.cvc} maxLength={3} onFocus={() => setCardFlipped(true)} onChange={handleCardChange} required />
+                    </div>
+
+                    <div className="cart-summary" style={{ margin: '4px 0' }}>
+                      <span>{t.total}</span>
+                      <strong>£{cartTotal.toFixed(2)}</strong>
+                    </div>
+
+                    <motion.button type="submit" className="pay-button" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+                      {t.payButton}
+                    </motion.button>
+                  </form>
+                </>
+              ) : (
+                <motion.div
+                  className="order-success"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 200, damping: 14 }}
+                >
+                  <motion.span
+                    className="success-check"
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ delay: 0.15, type: 'spring', stiffness: 300, damping: 14 }}
+                  >
+                    ✓
+                  </motion.span>
+                  <h3>{t.orderSuccess}</h3>
+                  <p>{t.orderSuccessDesc}</p>
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={closeCheckout}>
+                    {t.closeModal}
+                  </motion.button>
+                </motion.div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
 

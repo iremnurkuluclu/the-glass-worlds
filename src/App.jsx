@@ -946,7 +946,7 @@ const t = authText[authLanguage]
     exit={{ opacity: 0, y: -16 }}
     transition={{ duration: 0.35, ease: 'easeOut' }}
   >
-    <Shop session={session} language={authLanguage} onBack={() => navigate('/')} />
+    <Shop session={session} language={authLanguage} onLanguageChange={setAuthLanguage} onBack={() => navigate('/')} />
   </motion.div>
 ) : isPanelRoute && session ? (
   <motion.section

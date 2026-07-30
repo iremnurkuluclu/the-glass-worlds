@@ -1,14 +1,24 @@
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
+import AnimatedGlobeLogo from './AnimatedGlobeLogo'
 
 const adminText = {
   en: {
     title: 'Admin panel',
-    back: 'Back to site',
+    back: 'Back to homepage',
+    deskTitle: 'Studio desk',
+    metricProducts: 'Products',
+    metricMessages: 'Messages',
+    metricOrders: 'Orders',
+    metricWorkshop: 'Workshop',
+    tabDashboard: 'Overview',
     tabProducts: 'Products',
+    tabMessages: 'Messages',
     tabSupport: 'Support requests',
     tabOrders: 'Orders',
+    tabMembers: 'Members',
     tabStats: 'Stats & workshop',
 
     addProduct: 'Add a new kit',
@@ -20,6 +30,7 @@ const adminText = {
     addButton: 'Add kit',
     delete: 'Delete',
     noProducts: 'No kits yet.',
+    noMessages: 'No messages yet.',
 
     noSupport: 'No support requests yet.',
     markResolved: 'Mark resolved',
@@ -29,6 +40,23 @@ const adminText = {
 
     noOrders: 'No orders yet.',
     total: 'Total',
+    membersTitle: 'Member management',
+    membersSearch: 'Search by name or email',
+    noMembers: 'No members found.',
+    memberActive: 'Active',
+    memberDisabled: 'Disabled',
+    memberDisable: 'Disable account',
+    memberEnable: 'Enable account',
+    memberDelete: 'Delete member',
+    memberOwner: 'Owner account',
+    memberOrders: 'orders',
+    memberBookings: 'workshop registrations',
+    memberConfirmDisable: 'Disable this member account?',
+    memberConfirmEnable: 'Enable this member account?',
+    memberConfirmDelete: 'Permanently delete this member? This action cannot be undone.',
+    memberActionSuccess: 'Member account updated.',
+    memberDeleteSuccess: 'Member was deleted.',
+    memberActionError: 'The operation could not be completed. Check the Supabase function setup.',
 
     newMembersTitle: 'New members this month',
     workshopTitle: 'Workshop attendance',
@@ -41,10 +69,18 @@ const adminText = {
   },
   tr: {
     title: 'Yönetici paneli',
-    back: 'Siteye dön',
+    back: 'Ana sayfaya dön',
+    deskTitle: 'Atölye yönetimi',
+    metricProducts: 'Ürünler',
+    metricMessages: 'Mesajlar',
+    metricOrders: 'Siparişler',
+    metricWorkshop: 'Atölye',
+    tabDashboard: 'Genel bakış',
     tabProducts: 'Ürünler',
+    tabMessages: 'Mesajlar',
     tabSupport: 'Destek talepleri',
     tabOrders: 'Siparişler',
+    tabMembers: 'Üyeler',
     tabStats: 'İstatistikler & Atölye',
 
     addProduct: 'Yeni kit ekle',
@@ -56,6 +92,7 @@ const adminText = {
     addButton: 'Kiti ekle',
     delete: 'Sil',
     noProducts: 'Henüz kit yok.',
+    noMessages: 'Henüz mesaj yok.',
 
     noSupport: 'Henüz destek talebi yok.',
     markResolved: 'Çözüldü olarak işaretle',
@@ -65,6 +102,23 @@ const adminText = {
 
     noOrders: 'Henüz sipariş yok.',
     total: 'Toplam',
+    membersTitle: 'Üye yönetimi',
+    membersSearch: 'İsim veya e-posta ile ara',
+    noMembers: 'Üye bulunamadı.',
+    memberActive: 'Aktif',
+    memberDisabled: 'Pasif',
+    memberDisable: 'Hesabı pasife al',
+    memberEnable: 'Hesabı etkinleştir',
+    memberDelete: 'Üyeyi sil',
+    memberOwner: 'Yönetici hesabı',
+    memberOrders: 'sipariş',
+    memberBookings: 'etkinlik kaydı',
+    memberConfirmDisable: 'Bu üyenin hesabı pasife alınsın mı?',
+    memberConfirmEnable: 'Bu üyenin hesabı yeniden etkinleştirilsin mi?',
+    memberConfirmDelete: 'Bu üye kalıcı olarak silinsin mi? Bu işlem geri alınamaz.',
+    memberActionSuccess: 'Üye hesabı güncellendi.',
+    memberDeleteSuccess: 'Üye silindi.',
+    memberActionError: 'İşlem tamamlanamadı. Supabase fonksiyon kurulumunu kontrol et.',
 
     newMembersTitle: 'Bu ay kayıt olan yeni üye',
     workshopTitle: 'Atölye katılımı',
@@ -76,25 +130,37 @@ const adminText = {
     noSessions: 'Henüz kayıt girilmedi.',
   },
 }
-
 const tabs = [
+  ['dashboard', 'tabDashboard'],
   ['products', 'tabProducts'],
-  ['support', 'tabSupport'],
+  ['messages', 'tabMessages'],
   ['orders', 'tabOrders'],
+  ['members', 'tabMembers'],
+  ['support', 'tabSupport'],
   ['stats', 'tabStats'],
 ]
 
-function Admin({ session, language, onLanguageChange, onBack }) {
+function Admin({ language, onLanguageChange, onBack }) {
   const t = adminText[language] || adminText.en
-
-  const [view, setView] = useState('products')
+  const dateLocale = language === 'tr' ? 'tr-TR' : 'en-GB'
+  const location = useLocation()
+  const navigate = useNavigate()
+  const adminViews = tabs.map(([key]) => key)
+  const routeView = location.pathname.split('/')[2]
+  const view = adminViews.includes(routeView) ? routeView : 'dashboard'
+  const setView = (nextView) => navigate(`/admin/${nextView}`)
 
   const [kits, setKits] = useState([])
+  const [messages, setMessages] = useState([])
   const [kitForm, setKitForm] = useState({ name: '', description: '', price: '', image_url: '', materials: '' })
   const [kitStatus, setKitStatus] = useState('')
 
   const [supportRequests, setSupportRequests] = useState([])
   const [orders, setOrders] = useState([])
+  const [members, setMembers] = useState([])
+  const [memberSearch, setMemberSearch] = useState('')
+  const [memberStatus, setMemberStatus] = useState('')
+  const [memberBusy, setMemberBusy] = useState('')
 
   const [newMembersCount, setNewMembersCount] = useState(0)
   const [sessions, setSessions] = useState([])
@@ -102,14 +168,16 @@ function Admin({ session, language, onLanguageChange, onBack }) {
   const [sessionStatus, setSessionStatus] = useState('')
 
   const loadAdminData = async () => {
-    const [kitsRes, supportRes, ordersRes, sessionsRes] = await Promise.all([
+    const [kitsRes, messagesRes, supportRes, ordersRes, sessionsRes] = await Promise.all([
       supabase.from('kits').select('*').order('id'),
+      supabase.from('messages').select('id, name, email, message, created_at').order('created_at', { ascending: false }),
       supabase.from('support_requests').select('*').order('created_at', { ascending: false }),
       supabase.from('orders').select('*').order('created_at', { ascending: false }),
       supabase.from('workshop_sessions').select('*').order('session_date', { ascending: false }),
     ])
 
     if (kitsRes.data) setKits(kitsRes.data)
+    if (messagesRes.data) setMessages(messagesRes.data)
     if (supportRes.data) setSupportRequests(supportRes.data)
     if (ordersRes.data) setOrders(ordersRes.data)
     if (sessionsRes.data) setSessions(sessionsRes.data)
@@ -129,6 +197,57 @@ function Admin({ session, language, onLanguageChange, onBack }) {
   useEffect(() => {
     loadAdminData()
   }, [])
+
+  const loadMembers = async () => {
+    setMemberStatus('')
+    const { data, error } = await supabase.functions.invoke('hyper-responder', {
+      body: { action: 'list' },
+    })
+    if (error || data?.error) {
+      setMemberStatus(t.memberActionError)
+      return
+    }
+    setMembers(data?.users || [])
+  }
+
+  useEffect(() => {
+    if (view === 'members') loadMembers()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view])
+
+  const manageMember = async (member, action) => {
+    const confirmText = action === 'delete'
+      ? t.memberConfirmDelete
+      : member.is_disabled ? t.memberConfirmEnable : t.memberConfirmDisable
+    if (!window.confirm(confirmText)) return
+
+    setMemberBusy(member.id)
+    setMemberStatus('')
+    const { data, error } = await supabase.functions.invoke('hyper-responder', {
+      body: { action, user_id: member.id, disabled: !member.is_disabled },
+    })
+    setMemberBusy('')
+
+    if (error || data?.error) {
+      setMemberStatus(data?.error || t.memberActionError)
+      return
+    }
+
+    setMemberStatus(action === 'delete' ? t.memberDeleteSuccess : t.memberActionSuccess)
+    if (action === 'delete') {
+      setMembers((current) => current.filter((item) => item.id !== member.id))
+    } else {
+      setMembers((current) => current.map((item) => (
+        item.id === member.id ? { ...item, is_disabled: !member.is_disabled } : item
+      )))
+    }
+  }
+
+  const filteredMembers = members.filter((member) => {
+    const query = memberSearch.trim().toLocaleLowerCase(language === 'tr' ? 'tr-TR' : 'en-GB')
+    if (!query) return true
+    return `${member.full_name || ''} ${member.email || ''}`.toLocaleLowerCase(language === 'tr' ? 'tr-TR' : 'en-GB').includes(query)
+  })
 
   const handleKitChange = (event) => {
     const { name, value } = event.target
@@ -215,38 +334,38 @@ function Admin({ session, language, onLanguageChange, onBack }) {
     .reduce((sum, s) => sum + (s.attendee_count || 0), 0)
 
   return (
-    <section className="admin-section">
+    <section className="admin-page">
+      <aside className="admin-sidebar">
+        <button type="button" className="admin-sidebar-brand admin-brand-button" onClick={onBack}>
+          <AnimatedGlobeLogo compact />
+          <span className="admin-brand-copy">
+          <span>The Glass Worlds</span>
+          <strong>{t.deskTitle}</strong>
+          </span>
+        </button>
+        <nav className="admin-sidebar-nav" aria-label="Admin navigation">
+          {tabs.map(([key, labelKey]) => (
+            <button
+              key={key}
+              type="button"
+              className={view === key ? 'active' : ''}
+              onClick={() => setView(key)}
+            >
+              {t[labelKey]}
+            </button>
+          ))}
+        </nav>
+      </aside>
+      <main className="admin-workspace">
       <div className="admin-card">
         <div className="admin-header">
           <div>
             <span>The Glass Worlds</span>
             <h2>{t.title}</h2>
           </div>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-            {onLanguageChange && (
-              <motion.button
-                className="mini-language-toggle"
-                type="button"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={() => onLanguageChange(language === 'en' ? 'tr' : 'en')}
-              >
-                {language === 'en' ? 'TR' : 'EN'}
-              </motion.button>
-            )}
-            <motion.button
-              className="panel-back"
-              type="button"
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={onBack}
-            >
-              {t.back}
-            </motion.button>
-          </div>
         </div>
 
-        <div className="admin-tabs">
+        <div className="admin-tabs admin-tabs-mobile">
           {tabs.map(([key, labelKey]) => (
             <motion.button
               key={key}
@@ -262,6 +381,38 @@ function Admin({ session, language, onLanguageChange, onBack }) {
         </div>
 
         <AnimatePresence mode="wait">
+{view === 'dashboard' && (
+  <motion.div
+    key="dashboard"
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0 }}
+  >
+    <div className="dashboard-grid">
+
+      <div className="dashboard-card">
+        <h3>{t.metricProducts}</h3>
+        <strong>{kits.length}</strong>
+      </div>
+
+      <div className="dashboard-card">
+        <h3>{t.metricMessages}</h3>
+        <strong>{messages.length}</strong>
+      </div>
+
+      <div className="dashboard-card">
+        <h3>{t.metricOrders}</h3>
+        <strong>{orders.length}</strong>
+      </div>
+
+      <div className="dashboard-card">
+        <h3>{t.metricWorkshop}</h3>
+        <strong>{attendanceThisMonth}</strong>
+      </div>
+
+    </div>
+  </motion.div>
+)}
           {view === 'products' && (
             <motion.div
               key="products"
@@ -296,6 +447,32 @@ function Admin({ session, language, onLanguageChange, onBack }) {
                       <button className="admin-remove" onClick={() => deleteKit(kit.id)}>
                         {t.delete}
                       </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {view === 'messages' && (
+            <motion.div
+              key="messages"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              {messages.length === 0 ? (
+                <p className="panel-empty">{t.noMessages}</p>
+              ) : (
+                <div className="admin-list">
+                  {messages.map((message) => (
+                    <div className="admin-row admin-row-wide" key={message.id}>
+                      <div>
+                        <strong>{message.name || message.email}</strong>
+                        <p className="admin-message">{message.message}</p>
+                        <span>{message.email} · {new Date(message.created_at).toLocaleDateString(dateLocale)}</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -353,12 +530,89 @@ function Admin({ session, language, onLanguageChange, onBack }) {
                         <p className="admin-message">
                           {(order.items || []).map((item) => `${item.name} ×${item.quantity}`).join(', ')}
                         </p>
-                        <span>{new Date(order.created_at).toLocaleDateString()}</span>
+                        <span>{new Date(order.created_at).toLocaleDateString(dateLocale)}</span>
                       </div>
                       <span className="admin-total">
                         {t.total}: £{Number(order.total).toFixed(2)}
                       </span>
                     </div>
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {view === 'members' && (
+            <motion.div
+              key="members"
+              className="admin-members-view"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.25 }}
+            >
+              <div className="admin-members-heading">
+                <div>
+                  <span>The Glass Worlds</span>
+                  <h3>{t.membersTitle}</h3>
+                </div>
+                <span className="admin-member-count">{members.length}</span>
+              </div>
+
+              <label className="admin-member-search">
+                <span aria-hidden="true">⌕</span>
+                <input
+                  type="search"
+                  value={memberSearch}
+                  onChange={(event) => setMemberSearch(event.target.value)}
+                  placeholder={t.membersSearch}
+                />
+              </label>
+
+              {memberStatus && <p className="panel-status">{memberStatus}</p>}
+
+              {filteredMembers.length === 0 ? (
+                <p className="panel-empty">{t.noMembers}</p>
+              ) : (
+                <div className="admin-member-list">
+                  {filteredMembers.map((member) => (
+                    <article className={`admin-member-card${member.is_disabled ? ' is-disabled' : ''}`} key={member.id}>
+                      <div className="admin-member-avatar">
+                        {(member.full_name || member.email || '?').trim()[0]?.toUpperCase()}
+                      </div>
+                      <div className="admin-member-details">
+                        <div className="admin-member-name-row">
+                          <strong>{member.full_name || member.email}</strong>
+                          <span className={member.is_disabled ? 'disabled' : 'active'}>
+                            {member.is_owner ? t.memberOwner : member.is_disabled ? t.memberDisabled : t.memberActive}
+                          </span>
+                        </div>
+                        <p>{member.email}</p>
+                        <small>
+                          {member.order_count || 0} {t.memberOrders} · {member.booking_count || 0} {t.memberBookings}
+                        </small>
+                      </div>
+                      {!member.is_owner && (
+                        <div className="admin-member-actions">
+                          <button
+                            type="button"
+                            className="admin-member-toggle"
+                            disabled={memberBusy === member.id}
+                            onClick={() => manageMember(member, 'toggle_disabled')}
+                          >
+                            {member.is_disabled ? t.memberEnable : t.memberDisable}
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-member-delete"
+                            disabled={memberBusy === member.id}
+                            onClick={() => manageMember(member, 'delete')}
+                          >
+                            {t.memberDelete}
+                          </button>
+                        </div>
+                      )}
+                    </article>
                   ))}
                 </div>
               )}
@@ -416,7 +670,7 @@ function Admin({ session, language, onLanguageChange, onBack }) {
                   {sessions.map((s) => (
                     <div className="admin-row" key={s.id}>
                       <div>
-                        <strong>{new Date(s.session_date).toLocaleDateString()}</strong>
+                        <strong>{new Date(s.session_date).toLocaleDateString(dateLocale)}</strong>
                         <span>{s.attendee_count} {t.attendeeCount.toLowerCase()}</span>
                       </div>
                     </div>
@@ -427,9 +681,9 @@ function Admin({ session, language, onLanguageChange, onBack }) {
           )}
         </AnimatePresence>
       </div>
+      </main>
     </section>
   )
 }
 
 export default Admin
-

@@ -1,11 +1,15 @@
 
 import { useEffect, useState } from 'react'
+import { useLanguage } from './LanguageContext'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Shop from './Shop.jsx'
 import Admin from './Admin.jsx'
+import UserPanel from './UserPanel.jsx'
+import AnimatedGlobeLogo from './AnimatedGlobeLogo.jsx'
 import './App.css'
+import './editorial.css'
 const snowglobe =
   'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720794/snowglobe_laglkr.png'
 
@@ -17,21 +21,27 @@ const snowglobeVideo =
 
 const mansionGlobe =
   'https://res.cloudinary.com/nbjbftgp/image/upload/v1784720723/mansion-globe_ad7ubu.png'
-function App() {
+
+  function App() {
+
+  const { language, setLanguage } = useLanguage()
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     message: '',
   })
+
+ 
 const location = useLocation()
 const navigate = useNavigate()
-const isPanelRoute = location.pathname === '/panel'
-const isShopRoute = location.pathname === '/shop'
-const isAdminRoute = location.pathname === '/admin'
+const isPanelRoute = location.pathname === '/panel' || location.pathname.startsWith('/panel/')
+const isShopRoute = location.pathname === '/shop' || location.pathname.startsWith('/shop/')
+const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/')
 const OWNER_EMAIL = 'nirem587@gmail.com'
 const [profileData, setProfileData] = useState({ full_name: '', avatar_url: '', address: '' })
 const [profileStatus, setProfileStatus] = useState('')
-const [userMessages, setUserMessages] = useState([])
+const [userMessages] = useState([])
 const [orders, setOrders] = useState([])
 const [supportRequests, setSupportRequests] = useState([])
 const [supportForm, setSupportForm] = useState({ subject: '', message: '', type: 'help' })
@@ -43,6 +53,7 @@ const [session, setSession] = useState(null)
 const [sessionChecked, setSessionChecked] = useState(false)
 
 const [authMode, setAuthMode] = useState('')
+const [accountMenuOpen, setAccountMenuOpen] = useState(false)
 
 const [authData, setAuthData] = useState({
   email: '',
@@ -53,7 +64,7 @@ const [otpCode, setOtpCode] = useState('')
 const [newPassword, setNewPassword] = useState('')
 
 const [authMessage, setAuthMessage] = useState('')
-const [authLanguage, setAuthLanguage] = useState('en')
+
 
 const loadPanelData = async (currentSession) => {
   if (!currentSession) return
@@ -73,14 +84,6 @@ const loadPanelData = async (currentSession) => {
       address: profile.address || '',
     })
   }
-
-  const { data: messages } = await supabase
-    .from('messages')
-    .select('name, email, message, created_at')
-    .eq('email', user.email)
-    .order('created_at', { ascending: false })
-
-  setUserMessages(messages || [])
 
   const { data: orderRows } = await supabase
     .from('orders')
@@ -152,7 +155,6 @@ useEffect(() => {
     loadPanelData(session)
   } else {
     setProfileData({ full_name: '', avatar_url: '', address: '' })
-    setUserMessages([])
     setOrders([])
     setSupportRequests([])
   }
@@ -180,7 +182,7 @@ const handleProfileUpdate = async (event) => {
   event.preventDefault()
   if (!session) return
 
-  setProfileStatus(authLanguage === 'tr' ? 'Kaydediliyor...' : 'Saving...')
+  setProfileStatus(language === 'tr' ? 'Kaydediliyor...' : 'Saving...')
 
   const { error } = await supabase.from('profiles').upsert({
     id: session.user.id,
@@ -193,19 +195,19 @@ const handleProfileUpdate = async (event) => {
   if (error) {
     console.error('Profile update error:', error)
     setProfileStatus(
-      authLanguage === 'tr' ? 'Bir hata oluştu, tekrar deneyin.' : 'Something went wrong. Please try again.'
+      language === 'tr' ? 'Bir hata oluştu, tekrar deneyin.' : 'Something went wrong. Please try again.'
     )
     return
   }
 
-  setProfileStatus(authLanguage === 'tr' ? 'Profil güncellendi.' : 'Profile updated.')
+  setProfileStatus(language === 'tr' ? 'Profil güncellendi.' : 'Profile updated.')
 }
 
 const handleAvatarUpload = async (event) => {
   const file = event.target.files && event.target.files[0]
   if (!file || !session) return
 
-  setProfileStatus(authLanguage === 'tr' ? 'Fotoğraf yükleniyor...' : 'Uploading photo...')
+  setProfileStatus(language === 'tr' ? 'Fotoğraf yükleniyor...' : 'Uploading photo...')
 
   const fileExt = file.name.split('.').pop()
   const filePath = `${session.user.id}/avatar.${fileExt}`
@@ -217,7 +219,7 @@ const handleAvatarUpload = async (event) => {
   if (uploadError) {
     console.error('Avatar upload error:', uploadError)
     setProfileStatus(
-      authLanguage === 'tr' ? 'Fotoğraf yüklenemedi. Tekrar deneyin.' : 'Could not upload photo. Please try again.'
+      language === 'tr' ? 'Fotoğraf yüklenemedi. Tekrar deneyin.' : 'Could not upload photo. Please try again.'
     )
     return
   }
@@ -240,31 +242,31 @@ const handleAvatarUpload = async (event) => {
   if (dbError) {
     console.error('Profile save error:', dbError)
     setProfileStatus(
-      authLanguage === 'tr' ? 'Fotoğraf yüklendi ama kaydedilemedi.' : 'Photo uploaded but could not be saved.'
+      language === 'tr' ? 'Fotoğraf yüklendi ama kaydedilemedi.' : 'Photo uploaded but could not be saved.'
     )
     return
   }
 
-  setProfileStatus(authLanguage === 'tr' ? 'Fotoğraf güncellendi.' : 'Photo updated.')
+  setProfileStatus(language === 'tr' ? 'Fotoğraf güncellendi.' : 'Photo updated.')
 }
 
 const handlePasswordChange = async (event) => {
   event.preventDefault()
   if (!accountPassword) return
 
-  setPasswordChangeStatus(authLanguage === 'tr' ? 'Güncelleniyor...' : 'Updating...')
+  setPasswordChangeStatus(language === 'tr' ? 'Güncelleniyor...' : 'Updating...')
 
   const { error } = await supabase.auth.updateUser({ password: accountPassword })
 
   if (error) {
     setPasswordChangeStatus(
-      authLanguage === 'tr' ? 'Şifre güncellenemedi. Tekrar dene.' : 'Could not update password. Try again.'
+      language === 'tr' ? 'Şifre güncellenemedi. Tekrar dene.' : 'Could not update password. Try again.'
     )
     return
   }
 
   setAccountPassword('')
-  setPasswordChangeStatus(authLanguage === 'tr' ? 'Şifren güncellendi.' : 'Your password has been updated.')
+  setPasswordChangeStatus(language === 'tr' ? 'Şifren güncellendi.' : 'Your password has been updated.')
 }
 
 const handleSupportInputChange = (event) => {
@@ -276,7 +278,7 @@ const handleSupportSubmit = async (event) => {
   event.preventDefault()
   if (!session) return
 
-  setSupportStatus(authLanguage === 'tr' ? 'Gönderiliyor...' : 'Sending...')
+  setSupportStatus(language === 'tr' ? 'Gönderiliyor...' : 'Sending...')
 
   const { data, error } = await supabase
     .from('support_requests')
@@ -290,13 +292,13 @@ const handleSupportSubmit = async (event) => {
     .select()
 
   if (error) {
-    setSupportStatus(authLanguage === 'tr' ? 'Gönderilemedi. Tekrar dene.' : 'Could not send. Try again.')
+    setSupportStatus(language === 'tr' ? 'Gönderilemedi. Tekrar dene.' : 'Could not send. Try again.')
     return
   }
 
   setSupportRequests((current) => [data[0], ...current])
   setSupportForm({ subject: '', message: '', type: 'help' })
-  setSupportStatus(authLanguage === 'tr' ? 'Talebin alındı.' : 'Your request has been received.')
+  setSupportStatus(language === 'tr' ? 'Talebin alındı.' : 'Your request has been received.')
 }
 
 const handleAuthInputChange = (event) => {
@@ -310,7 +312,7 @@ const handleAuthInputChange = (event) => {
 
 const handleSignUp = async (event) => {
   event.preventDefault()
- setAuthMessage(authLanguage === 'tr' ? 'Hesap oluşturuluyor...' : 'Creating your account...')
+ setAuthMessage(language === 'tr' ? 'Hesap oluşturuluyor...' : 'Creating your account...')
 
   const { error } = await supabase.auth.signUp({
     email: authData.email,
@@ -319,7 +321,7 @@ const handleSignUp = async (event) => {
 
   if (error) {
     setAuthMessage(
-      authLanguage === 'tr'
+      language === 'tr'
         ? 'Hesap oluşturulamadı. Bilgilerini kontrol et.'
         : 'Could not create your account. Please check your details.'
     )
@@ -327,7 +329,7 @@ const handleSignUp = async (event) => {
   }
 
   setAuthMessage(
-    authLanguage === 'tr'
+    language === 'tr'
       ? 'E-postana 6 haneli bir kod gönderdik.'
       : "We've sent a 6-digit code to your email."
   )
@@ -337,7 +339,7 @@ const handleSignUp = async (event) => {
 
 const handleVerifySignup = async (event) => {
   event.preventDefault()
-  setAuthMessage(authLanguage === 'tr' ? 'Doğrulanıyor...' : 'Verifying...')
+  setAuthMessage(language === 'tr' ? 'Doğrulanıyor...' : 'Verifying...')
 
   const { error } = await supabase.auth.verifyOtp({
     email: authData.email,
@@ -347,7 +349,7 @@ const handleVerifySignup = async (event) => {
 
   if (error) {
     setAuthMessage(
-      authLanguage === 'tr' ? 'Kod hatalı ya da süresi dolmuş.' : 'That code is wrong or has expired.'
+      language === 'tr' ? 'Kod hatalı ya da süresi dolmuş.' : 'That code is wrong or has expired.'
     )
     return
   }
@@ -355,23 +357,24 @@ const handleVerifySignup = async (event) => {
   setAuthMessage('')
   setOtpCode('')
   setAuthMode('')
+  navigate('/shop/workshops')
 }
 
 const handleForgotPassword = async (event) => {
   event.preventDefault()
-  setAuthMessage(authLanguage === 'tr' ? 'Kod gönderiliyor...' : 'Sending code...')
+  setAuthMessage(language === 'tr' ? 'Kod gönderiliyor...' : 'Sending code...')
 
   const { error } = await supabase.auth.resetPasswordForEmail(authData.email)
 
   if (error) {
     setAuthMessage(
-      authLanguage === 'tr' ? 'Kod gönderilemedi. E-postanı kontrol et.' : 'Could not send the code. Check your email.'
+      language === 'tr' ? 'Kod gönderilemedi. E-postanı kontrol et.' : 'Could not send the code. Check your email.'
     )
     return
   }
 
   setAuthMessage(
-    authLanguage === 'tr'
+    language === 'tr'
       ? 'E-postana 6 haneli bir kod gönderdik.'
       : "We've sent a 6-digit code to your email."
   )
@@ -382,7 +385,7 @@ const handleForgotPassword = async (event) => {
 
 const handleResetPassword = async (event) => {
   event.preventDefault()
-  setAuthMessage(authLanguage === 'tr' ? 'Şifre güncelleniyor...' : 'Updating password...')
+  setAuthMessage(language === 'tr' ? 'Şifre güncelleniyor...' : 'Updating password...')
 
   const { error: verifyError } = await supabase.auth.verifyOtp({
     email: authData.email,
@@ -392,7 +395,7 @@ const handleResetPassword = async (event) => {
 
   if (verifyError) {
     setAuthMessage(
-      authLanguage === 'tr' ? 'Kod hatalı ya da süresi dolmuş.' : 'That code is wrong or has expired.'
+      language === 'tr' ? 'Kod hatalı ya da süresi dolmuş.' : 'That code is wrong or has expired.'
     )
     return
   }
@@ -401,12 +404,12 @@ const handleResetPassword = async (event) => {
 
   if (updateError) {
     setAuthMessage(
-      authLanguage === 'tr' ? 'Şifre güncellenemedi. Tekrar dene.' : 'Could not update the password. Try again.'
+      language === 'tr' ? 'Şifre güncellenemedi. Tekrar dene.' : 'Could not update the password. Try again.'
     )
     return
   }
 
-  setAuthMessage(authLanguage === 'tr' ? 'Şifren güncellendi.' : 'Your password has been updated.')
+  setAuthMessage(language === 'tr' ? 'Şifren güncellendi.' : 'Your password has been updated.')
   setOtpCode('')
   setNewPassword('')
   setAuthMode('')
@@ -414,7 +417,7 @@ const handleResetPassword = async (event) => {
 
 const handleSignIn = async (event) => {
   event.preventDefault()
- setAuthMessage(authLanguage === 'tr' ? 'Giriş yapılıyor...' : 'Logging in...')
+ setAuthMessage(language === 'tr' ? 'Giriş yapılıyor...' : 'Logging in...')
 
   const { error } = await supabase.auth.signInWithPassword({
     email: authData.email,
@@ -423,7 +426,7 @@ const handleSignIn = async (event) => {
 
   if (error) {
     setAuthMessage(
-      authLanguage === 'tr'
+      language === 'tr'
         ? 'Giriş yapılamadı. E-posta ya da şifre hatalı olabilir.'
         : 'Could not log in. Email or password may be wrong.'
     )
@@ -432,6 +435,7 @@ const handleSignIn = async (event) => {
 
   setAuthMessage('')
   setAuthMode('')
+  navigate('/shop/workshops')
 }
 
 const handleSignOut = async () => {
@@ -680,84 +684,13 @@ const authText = {
   },
 }
 
-const t = authText[authLanguage]
+const t = authText[language]
   return (
     <main className="page">
+      {!isPanelRoute && !isShopRoute && !isAdminRoute && (
       <nav className="navbar">
 <div className="brand">
-<motion.div
-  style={{
-    width: '46px',
-    height: '50px',
-    minWidth: '46px',
-    position: 'relative',
-    display: 'inline-block',
-    marginRight: '10px',
-  }}
->  
-    <div
-      style={{
-        width: '40px',
-        height: '35px',
-        margin: '0 auto',
-        borderRadius: '50%',
-        border: '2px solid white',
-        background: 'linear-gradient(180deg, #dff5ff, #77a5bd)',
-        boxShadow: 'inset 0 -7px 10px rgba(5, 28, 54, 0.25)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-<motion.div
-  style={{
-    position: 'absolute',
-    inset: '5px',
-    borderRadius: '50%',
-  }}
-  animate={{ rotate: 360 }}
-  transition={{
-    repeat: Infinity,
-    duration: 2.8,
-    ease: 'linear',
-  }}
->
-  {[
-    { top: '2px', left: '8px', size: '8px' },
-    { top: '7px', right: '5px', size: '7px' },
-    { top: '14px', left: '18px', size: '8px' },
-    { bottom: '5px', left: '9px', size: '7px' },
-    { bottom: '3px', right: '8px', size: '6px' },
-  ].map((flake, index) => (
-    <span
-      key={index}
-      style={{
-        position: 'absolute',
-        ...flake,
-        color: 'white',
-        fontSize: flake.size,
-        lineHeight: 1,
-        fontWeight: 700,
-      }}
-    >
-     {'*'}
-    </span>
-  ))}
-</motion.div>
-   
-
-</div>
-
-    <div
-      style={{
-        width: '30px',
-        height: '8px',
-        margin: '-2px auto 0',
-        borderRadius: '4px 4px 8px 8px',
-        background: 'linear-gradient(135deg, #a8663d, #4f2a1a)',
-      }}
-    />
-  </motion.div>
-
+  <AnimatedGlobeLogo />
   <span>The Glass Worlds</span>
 </div>
 {!isPanelRoute && !isShopRoute && !isAdminRoute && (
@@ -770,7 +703,7 @@ const t = authText[authLanguage]
             type="button"
             whileHover={{ scale: 1.1 }}
             whileTap={{ scale: 0.92 }}
-            onClick={() => setAuthLanguage(authLanguage === 'en' ? 'tr' : 'en')}
+            onClick={() => setLanguage(language === 'en' ? 'tr' : 'en')}
           >
             {t.switch}
           </motion.button>
@@ -782,63 +715,80 @@ const t = authText[authLanguage]
     <>
       <span className="welcome-text">{t.welcome}, {profileData.full_name || session.user.email.split('@')[0]}</span>
       <motion.button
-        className="book-button"
+        className="auth-link panel-toggle"
+        aria-label={t.myPanel}
+        title={t.myPanel}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.96 }}
-        onClick={handleSignOut}
+        onClick={() => navigate(isPanelRoute ? '/' : '/panel/profile')}
       >
-{t.logout}
+        <span className="user-silhouette" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm-7.5 8.5c.45-4.1 3.05-6.25 7.5-6.25s7.05 2.15 7.5 6.25H4.5Z" /></svg>
+        </span>
       </motion.button>
       <motion.button
-        className="auth-link panel-toggle"
+        className="auth-link panel-toggle home-shop-shortcut"
+        aria-label={language === 'tr' ? 'Mağazaya git' : 'Go to shop'}
+        title={language === 'tr' ? 'Mağazaya git' : 'Go to shop'}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.96 }}
-        onClick={() => navigate(isPanelRoute ? '/' : '/panel')}
+        onClick={() => navigate('/shop/workshops')}
       >
-{t.myPanel}
-      </motion.button>
-      <motion.button
-        className="auth-link panel-toggle"
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.96 }}
-        onClick={() => navigate(isShopRoute ? '/' : '/shop')}
-      >
-        {authLanguage === 'tr' ? 'Mağaza' : 'Shop'}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M3 4h2.2l2.1 9.1a2 2 0 0 0 2 1.55h7.85a2 2 0 0 0 1.95-1.55L20.5 7H6" />
+          <circle cx="9.4" cy="19" r="1.35" />
+          <circle cx="17.2" cy="19" r="1.35" />
+        </svg>
       </motion.button>
       {session.user.email === OWNER_EMAIL && (
         <motion.button
           className="auth-link panel-toggle"
           whileHover={{ scale: 1.06 }}
           whileTap={{ scale: 0.96 }}
-          onClick={() => navigate(isAdminRoute ? '/' : '/admin')}
+          onClick={() => navigate(isAdminRoute ? '/' : '/admin/dashboard')}
         >
           Admin
         </motion.button>
       )}
     </>
   ) : (
-    <>
+    <div className="guest-account-menu">
       <motion.button
-        className="auth-link"
+        type="button"
+        className={`guest-account-trigger${accountMenuOpen ? ' active' : ''}`}
         whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.96 }}
-        onClick={() => setAuthMode('login')}
+        whileTap={{ scale: 0.94 }}
+        onClick={() => setAccountMenuOpen((open) => !open)}
+        aria-label={language === 'tr' ? 'Hesap menüsü' : 'Account menu'}
+        aria-expanded={accountMenuOpen}
       >
-      {t.login}
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 12a4.25 4.25 0 1 0 0-8.5 4.25 4.25 0 0 0 0 8.5Zm-7.5 8.5c.45-4.1 3.05-6.25 7.5-6.25s7.05 2.15 7.5 6.25H4.5Z" />
+        </svg>
       </motion.button>
-
-      <motion.button
-        className="book-button"
-        whileHover={{ scale: 1.06 }}
-        whileTap={{ scale: 0.96 }}
-        onClick={() => setAuthMode('register')}
-      >
-       {t.signup}
-      </motion.button>
-    </>
+      <AnimatePresence>
+        {accountMenuOpen && (
+          <motion.div
+            className="guest-account-dropdown"
+            initial={{ opacity: 0, y: -8, scale: .96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -8, scale: .96 }}
+            transition={{ duration: .18 }}
+          >
+            <button type="button" onClick={() => { setAccountMenuOpen(false); setAuthMode('login') }}>
+              {t.login}
+            </button>
+            <button type="button" onClick={() => { setAccountMenuOpen(false); setAuthMode('register') }}>
+              {t.signup}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )}
 </div>
       </nav>
+      )}
 {authMode && (
   <motion.div
     className="auth-overlay"
@@ -1061,7 +1011,7 @@ const t = authText[authLanguage]
     exit={{ opacity: 0, y: -16 }}
     transition={{ duration: 0.35, ease: 'easeOut' }}
   >
-    <Admin session={session} language={authLanguage} onLanguageChange={setAuthLanguage} onBack={() => navigate('/')} />
+    <Admin session={session} language={language} onLanguageChange={setLanguage} onBack={() => navigate('/')} />
   </motion.div>
 ) : isShopRoute && session ? (
   <motion.div
@@ -1071,9 +1021,33 @@ const t = authText[authLanguage]
     exit={{ opacity: 0, y: -16 }}
     transition={{ duration: 0.35, ease: 'easeOut' }}
   >
-    <Shop session={session} language={authLanguage} onLanguageChange={setAuthLanguage} onBack={() => navigate('/')} />
+    <Shop
+      session={session}
+      language={language}
+      onLanguageChange={setLanguage}
+      onBack={() => navigate('/')}
+      onOrderComplete={(order) => setOrders((current) => [order, ...current])}
+    />
   </motion.div>
 ) : isPanelRoute && session ? (
+  <UserPanel
+    session={session}
+   language={language}
+    profileData={profileData}
+    profileStatus={profileStatus}
+    onProfileChange={handleProfileInputChange}
+    onProfileSubmit={handleProfileUpdate}
+    onAvatarUpload={handleAvatarUpload}
+    orders={orders}
+    supportRequests={supportRequests}
+    supportForm={supportForm}
+    supportStatus={supportStatus}
+    onSupportChange={handleSupportInputChange}
+    onSupportSubmit={handleSupportSubmit}
+    onSignOut={handleSignOut}
+    onBack={() => navigate('/')}
+  />
+) : authMode === 'legacy-panel' ? (
   <motion.section
     key="panel"
     className="panel-section"

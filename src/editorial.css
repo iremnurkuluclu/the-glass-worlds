@@ -1851,3 +1851,56 @@
   .booking-slot-price { display: none; }
   .booking-slot button { grid-column: 2 / -1; }
 }
+@media (max-width: 760px) {
+  .studio-account-page {
+    width: 100%;
+    padding: 12px !important;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .studio-account-page .account-shell {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 20px;
+  }
+
+  .studio-account-page .account-rail {
+    position: static !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .studio-account-page .account-content,
+  .studio-account-page .account-page-card,
+  .studio-account-page .account-profile {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .studio-account-page .account-profile {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 24px 16px !important;
+  }
+
+  .studio-account-page .account-profile > * {
+    grid-column: 1 !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .studio-account-page input,
+  .studio-account-page textarea,
+  .studio-account-page select,
+  .studio-account-page button {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+}

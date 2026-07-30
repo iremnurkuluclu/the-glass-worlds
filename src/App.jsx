@@ -483,7 +483,7 @@ const authText = {
     bookSeatLine1: 'Book',
     bookSeatLine2: 'a seat',
     nextClass: 'Next class',
-    nextClassTime: 'August 2, 2026 · 11:00 AM',
+    nextClassTime: 'Saturday - 11:00 AM',
 
     processLabel: 'Our process',
     processTitleLine1: 'From tiny pieces',
@@ -602,7 +602,7 @@ const authText = {
     bookSeatLine1: 'Yer',
     bookSeatLine2: 'ayırt',
     nextClass: 'Sıradaki atölye',
-    nextClassTime: '2 Ağustos 2026 · 11:00',
+    nextClassTime: 'Cumartesi - 11:00',
 
     processLabel: 'Sürecimiz',
     processTitleLine1: 'Küçük parçalardan',
@@ -1506,8 +1506,8 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
             <motion.button
               className="private-button"
               onClick={() =>
-  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
-}
+               document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
+     }
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.96 }}
             >
@@ -1596,30 +1596,35 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
     </motion.form>
   </motion.div>
 </section>
-      <footer className="footer">
-        <div>
-          <strong>The Glass Worlds</strong>
-          <p>{t.footerTagline}</p>
-        </div>
-
-        <div>
-          <span>{t.studio}</span>
-          <p>
-            {t.studioAddress1}<br />
-            {t.studioAddress2}
-          </p>
-        </div>
-
-        <div>
-          <span>{t.contactLabel}</span>
-          <p>hello@theglassworlds.studio</p>
-          <p>Instagram</p>
-        </div>
-      </footer>
+  
   </motion.div>
 )}
 </AnimatePresence>
+
+
+<footer className="footer">
+  <div>
+    <strong>The Glass Worlds</strong>
+    <p>{t.footerTagline}</p>
+  </div>
+
+  <div>
+    <span>{t.studio}</span>
+    <p>
+      {t.studioAddress1}<br />
+      {t.studioAddress2}
+    </p>
+  </div>
+
+  <div>
+    <span>{t.contactLabel}</span>
+    <p>hello@theglassworlds.studio</p>
+    <p>Instagram</p>
+  </div>
+</footer>
+
 </main>
+
   )
 }
 export default App

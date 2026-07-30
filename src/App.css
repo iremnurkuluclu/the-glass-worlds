@@ -4179,3 +4179,66 @@ grid-template-columns:1fr;
   border-color: var(--studio-red);
   background: var(--studio-red);
 }
+@media (max-width: 720px) {
+  .panel-section {
+    width: 100%;
+    padding: 20px 12px;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .panel-card {
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    padding: 18px 12px;
+    margin: 0;
+    box-sizing: border-box;
+  }
+
+  .panel-header,
+  .panel-grid,
+  .panel-profile,
+  .panel-messages,
+  .panel-password,
+  .panel-orders,
+  .panel-support {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .panel-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+
+  .panel-profile,
+  .panel-messages,
+  .panel-password,
+  .panel-orders,
+  .panel-support {
+    padding: 16px;
+  }
+
+  .panel-profile input,
+  .panel-password input,
+  .panel-support input,
+  .panel-support select,
+  .panel-support textarea {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+
+  .avatar-upload {
+    flex-wrap: wrap;
+  }
+
+  .avatar-upload-button {
+    max-width: 100%;
+    white-space: normal;
+  }
+}

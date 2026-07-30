@@ -1505,6 +1505,9 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
             </p>
             <motion.button
               className="private-button"
+              onClick={() =>
+  document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
+}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.96 }}
             >

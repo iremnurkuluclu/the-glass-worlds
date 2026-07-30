@@ -483,7 +483,7 @@ const authText = {
     bookSeatLine1: 'Book',
     bookSeatLine2: 'a seat',
     nextClass: 'Next class',
-    nextClassTime: 'Saturday - 11:00 AM',
+    nextClassTime: 'August 2, 2026 · 11:00 AM',
 
     processLabel: 'Our process',
     processTitleLine1: 'From tiny pieces',
@@ -602,7 +602,7 @@ const authText = {
     bookSeatLine1: 'Yer',
     bookSeatLine2: 'ayırt',
     nextClass: 'Sıradaki atölye',
-    nextClassTime: 'Cumartesi - 11:00',
+    nextClassTime: '2 Ağustos 2026 · 11:00',
 
     processLabel: 'Sürecimiz',
     processTitleLine1: 'Küçük parçalardan',

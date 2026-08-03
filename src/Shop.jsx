@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -236,7 +237,7 @@ function CardPreview({ card, flipped, t }) {
   )
 }
 
-function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) {
+function Shop({ session, language, onBack, onOrderComplete }) {
   const t = shopText[language] || shopText.en
   const location = useLocation()
   const navigate = useNavigate()
@@ -244,7 +245,7 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
   const routeSection = location.pathname.split('/')[2]
   const activeSection = shopSections.includes(routeSection) ? routeSection : 'workshops'
 
-  const [menuOpen, setMenuOpen] = useState(false)
+  
 
   const [kits, setKits] = useState([])
   const [makerGlobes, setMakerGlobes] = useState([])
@@ -256,13 +257,21 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
 
   const [selectedMaker, setSelectedMaker] = useState(null)
   const [checkoutOpen, setCheckoutOpen] = useState(false)
-  const [orderSuccess, setOrderSuccess] = useState(false)
-  const [checkoutError, setCheckoutError] = useState('')
+const [checkoutStep, setCheckoutStep] = useState(1)
+const [orderSuccess, setOrderSuccess] = useState(false)
+const [checkoutError, setCheckoutError] = useState('')
+  
 
-  const [listingForm, setListingForm] = useState({ title: '', maker_name: '', note: '', price: '', image_url: '' })
-  const [listingStatus, setListingStatus] = useState('')
-
-  const [addressForm, setAddressForm] = useState({ firstName: '', lastName: '', address: '', city: '', phone: '' })
+  const [addressForm, setAddressForm] = useState({
+  firstName: '',
+  lastName: '',
+  email: session?.user?.email || '',
+  phone: '',
+  city: '',
+  district: '',
+  address: '',
+  postalCode: '',
+})
   const [cardForm, setCardForm] = useState({ number: '', name: '', expiry: '', cvc: '' })
   const [cardFlipped, setCardFlipped] = useState(false)
   const [reviews, setReviews] = useState([])
@@ -283,7 +292,7 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
       price: 45,
     }
   })
-  const productImages = [productBallerina, productFish, productBear, productPrince]
+ 
   const showcaseGlobes = [
     {
       id: 'showcase-ballerina',
@@ -328,17 +337,24 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
       _showcase: true,
     },
   ]
-  const displayMakerGlobes = showcaseGlobes.map((showcase, index) => ({
-    ...(makerGlobes[index] || {}),
-    ...showcase,
-    sold: showcase.sold || makerGlobes[index]?.sold === true || makerGlobes[index]?.status === 'sold',
-    _showcase: true,
-  })).concat(makerGlobes.slice(4))
+  const displayMakerGlobes = [
+  ...showcaseGlobes,
+  ...makerGlobes.filter(
+    (globe) =>
+      !showcaseGlobes.some(
+        (showcase) => String(showcase.id) === String(globe.id)
+      )
+  ),
+]
 
   const loadShopData = async () => {
     const [kitsRes, globesRes, cartRes, favRes, reviewsRes] = await Promise.all([
       supabase.from('kits').select('*').order('id'),
-      supabase.from('secondhand_globes').select('*').order('created_at', { ascending: false }),
+      supabase
+  .from('secondhand_globes')
+  .select('*')
+  .eq('approval_status', 'approved')
+  .order('created_at', { ascending: false }),
       supabase.from('cart_items').select('*').eq('user_id', session.user.id),
       supabase.from('favorites').select('*').eq('user_id', session.user.id),
       supabase.from('workshop_reviews').select('*').eq('approved', true).order('created_at', { ascending: false }),
@@ -387,7 +403,7 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
     if (itemType === 'secondhand') {
       const globeIndex = makerGlobes.findIndex((globe) => globe.id === itemId)
       const globe = makerGlobes[globeIndex]
-      if (globe && (globe.sold === true || globe.status === 'sold' || globeIndex < 2)) return
+     if (globe && (globe.sold === true || globe.status === 'sold')) return
     }
     const existing = cartItems.find((c) => c.item_type === itemType && c.item_id === itemId)
 
@@ -463,39 +479,7 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
       .select()
 
     if (data) setFavoriteItems((current) => [...current, data[0]])
-  }
-
-  const handleListingChange = (event) => {
-    const { name, value } = event.target
-    setListingForm((current) => ({ ...current, [name]: value }))
-  }
-
-  const submitListing = async (event) => {
-    event.preventDefault()
-    setListingStatus('...')
-
-    const { data, error } = await supabase
-      .from('secondhand_globes')
-      .insert({
-        seller_id: session.user.id,
-        title: listingForm.title,
-        maker_name: listingForm.maker_name,
-        note: listingForm.note,
-        price: Number(listingForm.price),
-        image_url: listingForm.image_url,
-      })
-      .select()
-
-    if (error) {
-      setListingStatus('error')
-      return
-    }
-
-    setMakerGlobes((current) => [data[0], ...current])
-    setListingForm({ title: '', maker_name: '', note: '', price: '', image_url: '' })
-    setListingStatus(t.sellSuccess)
-  }
-
+  } 
   const removeListing = async (id) => {
     await supabase.from('secondhand_globes').delete().eq('id', id)
     setMakerGlobes((current) => current.filter((item) => item.id !== id))
@@ -531,6 +515,8 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
         name: item?.name || item?.title || '',
         price: item?.price || 0,
         quantity: cartItem.quantity,
+        seller_id: item?.seller_id || null,
+        commission_rate: Number(item?.commission_rate || 15),
       }
     }).concat(bookingCartItems.map((item) => ({
       type: 'workshop',
@@ -544,6 +530,8 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
       name: item.title,
       price: Number(item.price),
       quantity: item.quantity,
+      seller_id: item.seller_id || null,
+      commission_rate: Number(item.commission_rate || 15),
     })))
 
     const orderPayload = {
@@ -551,12 +539,65 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
       items: orderItems,
       total: cartTotal,
       full_name: `${addressForm.firstName} ${addressForm.lastName}`.trim(),
-      address: `${addressForm.firstName} ${addressForm.lastName}, ${addressForm.address}, ${addressForm.city}`,
+      address: `${addressForm.firstName} ${addressForm.lastName}, ${addressForm.address}, ${addressForm.district}, ${addressForm.city}, ${addressForm.postalCode}`,
     }
-    const { error: orderError } = await supabase.from('orders').insert(orderPayload)
-    if (orderError) {
+    const { data: createdOrder, error: orderError } = await supabase
+      .from('orders')
+      .insert(orderPayload)
+      .select('id, order_code, created_at, status')
+      .single()
+
+    if (orderError || !createdOrder) {
       setCheckoutError(t.orderError)
       return
+    }
+
+    const orderItemRows = orderItems.map((item) => {
+      const lineTotal = Number(item.price || 0) * Number(item.quantity || 1)
+      const isSellerProduct = item.type === 'secondhand' && Boolean(item.seller_id)
+      const commissionRate = isSellerProduct
+        ? Number(item.commission_rate || 15)
+        : 100
+      const adminAmount = isSellerProduct
+        ? lineTotal * (commissionRate / 100)
+        : lineTotal
+      const sellerAmount = isSellerProduct ? lineTotal - adminAmount : 0
+      const numericProductId = Number(item.id)
+
+      return {
+        order_id: createdOrder.id,
+        product_id: Number.isFinite(numericProductId) ? numericProductId : null,
+        seller_id: isSellerProduct ? item.seller_id : null,
+        product_title: item.name,
+        product_type: item.type,
+        quantity: Number(item.quantity || 1),
+        unit_price: Number(item.price || 0),
+        line_total: lineTotal,
+        commission_rate: commissionRate,
+        admin_amount: adminAmount,
+        seller_amount: sellerAmount,
+      }
+    })
+
+    const { error: orderItemsError } = await supabase
+      .from('order_items')
+      .insert(orderItemRows)
+
+    if (orderItemsError) {
+      console.error('Order items could not be saved:', orderItemsError)
+      setCheckoutError(t.orderError)
+      return
+    }
+
+    const soldSellerProductIds = orderItems
+      .filter((item) => item.type === 'secondhand' && item.seller_id)
+      .map((item) => item.id)
+
+    if (soldSellerProductIds.length > 0) {
+      await supabase
+        .from('secondhand_globes')
+        .update({ sold: true })
+        .in('id', soldSellerProductIds)
     }
 
     for (const item of cartItems) {
@@ -573,9 +614,10 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
     setMakerCartItems([])
     onOrderComplete?.({
       ...orderPayload,
-      id: `demo-${Date.now()}`,
-      created_at: new Date().toISOString(),
-      status: 'received',
+      id: createdOrder.id,
+      order_code: createdOrder.order_code,
+      created_at: createdOrder.created_at,
+      status: createdOrder.status || 'received',
     })
     setOrderSuccess(true)
   }
@@ -867,40 +909,48 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
               </div>
 
               <div className="maker-market-layout">
-              <motion.form
-                className="glass-card sell-form"
-                onSubmit={submitListing}
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                <h3>{t.sellTitle}</h3>
-                <p className="sell-help">{t.sellHelp}</p>
-                <label>
-                  <span>{t.sellName}</span>
-                  <input name="title" placeholder={t.sellName} value={listingForm.title} onChange={handleListingChange} required />
-                </label>
-                <label>
-                  <span>{t.sellMaker}</span>
-                  <input name="maker_name" placeholder={t.sellMaker} value={listingForm.maker_name} onChange={handleListingChange} required />
-                </label>
-                <label>
-                  <span>{t.sellNote}</span>
-                  <input name="note" placeholder={t.sellNote} value={listingForm.note} onChange={handleListingChange} />
-                </label>
-                <label>
-                  <span>{t.sellPrice}</span>
-                  <input name="price" type="number" min="0" step="0.01" placeholder={t.sellPrice} value={listingForm.price} onChange={handleListingChange} required />
-                </label>
-                <label>
-                  <span>{t.sellImage}</span>
-                  <input name="image_url" placeholder={t.sellImage} value={listingForm.image_url} onChange={handleListingChange} />
-                </label>
-                <motion.button type="submit" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  {t.sellSubmit}
-                </motion.button>
-                {listingStatus && <p className="shop-status">{listingStatus}</p>}
-              </motion.form>
+             <motion.aside
+  className="glass-card seller-invitation"
+  initial={{ opacity: 0, y: 16 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ delay: 0.1 }}
+>
+  <span className="seller-invitation-eyebrow">
+    {language === "tr" ? "SATICI PROGRAMI" : "SELLER PROGRAM"}
+  </span>
+
+  <h3>
+    {language === "tr"
+      ? "Kar küreni yeni bir hikâyeye dönüştür."
+      : "Turn your snow globe into a new story."}
+  </h3>
+
+  <p>
+   {language === "tr"
+  ? "The Glass Worlds atölyesinde hazırladığın kar küresi için satış başvurusu oluştur. Başvurun incelendikten sonra uygun bulunursa mağazada yayınlanır."
+  : "Apply to sell the snow globe you created at a The Glass Worlds workshop. Approved products are published in the shop."}
+  </p>
+
+  <div className="seller-invitation-commission">
+    <strong>%15</strong>
+
+    <span>
+      {language === "tr"
+        ? "Şeffaf hizmet komisyonu"
+        : "Transparent service commission"}
+    </span>
+  </div>
+
+  <motion.button
+    type="button"
+    whileHover={{ scale: 1.03 }}
+    whileTap={{ scale: 0.97 }}
+    onClick={() => navigate("/sell")}
+  >
+    {language === "tr" ? "Kar Küreni Sat" : "Sell Your Snow Globe"}
+    <span>→</span>
+  </motion.button>
+</motion.aside>
 
               <motion.div
                 className="kit-grid maker-globe-grid"
@@ -1123,7 +1173,11 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
                       className="checkout-cta"
                       whileHover={{ scale: 1.04 }}
                       whileTap={{ scale: 0.96 }}
-                      onClick={() => setCheckoutOpen(true)}
+                     onClick={() => {
+  setCheckoutStep(1)
+  setCheckoutError("")
+  setCheckoutOpen(true)
+}}
                     >
                       {t.checkout}
                     </motion.button>
@@ -1221,46 +1275,466 @@ function Shop({ session, language, onLanguageChange, onBack, onOrderComplete }) 
                     ✕
                   </button>
                   <h3>{t.checkoutTitle}</h3>
-                  <p className="shop-status" style={{ marginBottom: 14 }}>{t.checkoutNote}</p>
+                  
 
-                  <CardPreview card={cardForm} flipped={cardFlipped} t={t} />
+                  
 
-                  <form className="checkout-form" onSubmit={handlePlaceOrder}>
-                    <div className="checkout-row">
-                      <input name="firstName" placeholder={t.firstName} value={addressForm.firstName} onChange={handleAddressChange} required />
-                      <input name="lastName" placeholder={t.lastName} value={addressForm.lastName} onChange={handleAddressChange} required />
-                    </div>
-                    <input name="address" placeholder={t.address} value={addressForm.address} onChange={handleAddressChange} required />
-                    <div className="checkout-row">
-                      <input name="city" placeholder={t.city} value={addressForm.city} onChange={handleAddressChange} required />
-                      <input name="phone" placeholder={t.phone} value={addressForm.phone} onChange={handleAddressChange} required />
-                    </div>
+                 <form
+  className="checkout-form checkout-form-detailed"
+  onSubmit={handlePlaceOrder}
+>
+  {/* Üstteki adım göstergesi */}
+  <div className="checkout-progress">
+    {[
+      language === "tr" ? "Kullanıcı" : "Customer",
+      language === "tr" ? "Teslimat" : "Delivery",
+      language === "tr" ? "Kart" : "Card",
+      language === "tr" ? "Onay" : "Confirm",
+    ].map((label, index) => {
+      const stepNumber = index + 1
 
-                    <input
-                      name="number"
-                      placeholder={t.cardNumber}
-                      value={cardForm.number}
-                      maxLength={19}
-                      onFocus={() => setCardFlipped(false)}
-                      onChange={handleCardChange}
-                      required
-                    />
-                    <input name="name" placeholder={t.cardName} value={cardForm.name} onFocus={() => setCardFlipped(false)} onChange={handleCardChange} required />
-                    <div className="checkout-row">
-                      <input name="expiry" placeholder={t.expiry} value={cardForm.expiry} onFocus={() => setCardFlipped(false)} onChange={handleCardChange} required />
-                      <input name="cvc" placeholder={t.cvc} value={cardForm.cvc} maxLength={3} onFocus={() => setCardFlipped(true)} onChange={handleCardChange} required />
-                    </div>
+      return (
+        <div
+          key={label}
+          className={`checkout-progress-step ${
+            checkoutStep === stepNumber ? "active" : ""
+          } ${checkoutStep > stepNumber ? "complete" : ""}`}
+        >
+          <span>{checkoutStep > stepNumber ? "✓" : stepNumber}</span>
+          <small>{label}</small>
+        </div>
+      )
+    })}
+  </div>
 
-                    <div className="cart-summary" style={{ margin: '4px 0' }}>
-                      <span>{t.total}</span>
-                      <strong>£{cartTotal.toFixed(2)}</strong>
-                    </div>
-                    {checkoutError && <p className="checkout-error" role="alert">{checkoutError}</p>}
+  {/* 1 — Kullanıcı bilgileri */}
+  {checkoutStep === 1 && (
+    <motion.section
+      className="checkout-section"
+      initial={{ opacity: 0, x: 25 }}
+      animate={{ opacity: 1, x: 0 }}
+    >
+      <div className="checkout-section-heading">
+        <span className="checkout-step-number">1</span>
 
-                    <motion.button type="submit" className="pay-button" whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
-                      {t.payButton}
-                    </motion.button>
-                  </form>
+        <div>
+          <h4>
+            {language === "tr"
+              ? "Kullanıcı Bilgileri"
+              : "Customer Information"}
+          </h4>
+          <p>
+            {language === "tr"
+              ? "Siparişiniz hakkında size ulaşabilmemiz için bilgilerinizi girin."
+              : "Enter your contact details so we can reach you about the order."}
+          </p>
+        </div>
+      </div>
+
+      <div className="checkout-row">
+        <label className="checkout-field">
+          <span>{language === "tr" ? "Ad" : "First name"}</span>
+          <input
+            name="firstName"
+            value={addressForm.firstName}
+            onChange={handleAddressChange}
+            placeholder={t.firstName}
+            autoComplete="given-name"
+          />
+        </label>
+
+        <label className="checkout-field">
+          <span>{language === "tr" ? "Soyad" : "Last name"}</span>
+          <input
+            name="lastName"
+            value={addressForm.lastName}
+            onChange={handleAddressChange}
+            placeholder={t.lastName}
+            autoComplete="family-name"
+          />
+        </label>
+      </div>
+
+      <label className="checkout-field">
+        <span>{language === "tr" ? "E-posta" : "Email"}</span>
+        <input
+          name="email"
+          type="email"
+          value={addressForm.email}
+          onChange={handleAddressChange}
+          placeholder="ornek@mail.com"
+          autoComplete="email"
+        />
+      </label>
+
+      <label className="checkout-field">
+        <span>{language === "tr" ? "Telefon" : "Phone"}</span>
+        <input
+          name="phone"
+          type="tel"
+          value={addressForm.phone}
+          onChange={handleAddressChange}
+          placeholder={t.phone}
+          autoComplete="tel"
+        />
+      </label>
+
+      <div className="checkout-navigation checkout-navigation-end">
+        <button
+          type="button"
+          className="checkout-next"
+          disabled={
+            !addressForm.firstName.trim() ||
+            !addressForm.lastName.trim() ||
+            !addressForm.email.trim() ||
+            !addressForm.phone.trim()
+          }
+          onClick={() => {
+            setCheckoutError("")
+            setCheckoutStep(2)
+          }}
+        >
+          {language === "tr"
+            ? "Teslimat Bilgilerine Devam Et"
+            : "Continue to Delivery"}
+          <span>→</span>
+        </button>
+      </div>
+    </motion.section>
+  )}
+
+  {/* 2 — Teslimat bilgileri */}
+  {checkoutStep === 2 && (
+    <motion.section
+      className="checkout-section"
+      initial={{ opacity: 0, x: 25 }}
+      animate={{ opacity: 1, x: 0 }}
+    >
+      <div className="checkout-section-heading">
+        <span className="checkout-step-number">2</span>
+
+        <div>
+          <h4>
+            {language === "tr"
+              ? "Teslimat Bilgileri"
+              : "Delivery Information"}
+          </h4>
+          <p>
+            {language === "tr"
+              ? "Kar kürenizin teslim edileceği adresi eksiksiz girin."
+              : "Enter the complete delivery address for your snow globe."}
+          </p>
+        </div>
+      </div>
+
+      <div className="checkout-row">
+        <label className="checkout-field">
+          <span>{language === "tr" ? "Şehir" : "City"}</span>
+          <input
+            name="city"
+            value={addressForm.city}
+            onChange={handleAddressChange}
+            placeholder={t.city}
+            autoComplete="address-level1"
+          />
+        </label>
+
+        <label className="checkout-field">
+          <span>{language === "tr" ? "İlçe" : "District"}</span>
+          <input
+            name="district"
+            value={addressForm.district}
+            onChange={handleAddressChange}
+            placeholder={language === "tr" ? "İlçe" : "District"}
+            autoComplete="address-level2"
+          />
+        </label>
+      </div>
+
+      <label className="checkout-field">
+        <span>{language === "tr" ? "Adres" : "Address"}</span>
+        <textarea
+          name="address"
+          value={addressForm.address}
+          onChange={handleAddressChange}
+          placeholder={
+            language === "tr"
+              ? "Mahalle, cadde, sokak, bina ve daire numarası"
+              : "Street, building and apartment number"
+          }
+          autoComplete="street-address"
+          rows="4"
+        />
+      </label>
+
+      <label className="checkout-field">
+        <span>{language === "tr" ? "Posta kodu" : "Postal code"}</span>
+        <input
+          name="postalCode"
+          value={addressForm.postalCode}
+          onChange={handleAddressChange}
+          placeholder={language === "tr" ? "Posta kodu" : "Postal code"}
+          autoComplete="postal-code"
+        />
+      </label>
+
+      <div className="checkout-navigation">
+        <button
+          type="button"
+          className="checkout-back"
+          onClick={() => setCheckoutStep(1)}
+        >
+          <span>←</span>
+          {language === "tr" ? "Geri" : "Back"}
+        </button>
+
+        <button
+          type="button"
+          className="checkout-next"
+          disabled={
+            !addressForm.city.trim() ||
+            !addressForm.district.trim() ||
+            !addressForm.address.trim() ||
+            !addressForm.postalCode.trim()
+          }
+          onClick={() => {
+            setCheckoutError("")
+            setCheckoutStep(3)
+          }}
+        >
+          {language === "tr"
+            ? "Kart Bilgilerine Devam Et"
+            : "Continue to Card"}
+          <span>→</span>
+        </button>
+      </div>
+    </motion.section>
+  )}
+
+  {/* 3 — Kart bilgileri */}
+  {checkoutStep === 3 && (
+    <motion.section
+      className="checkout-section"
+      initial={{ opacity: 0, x: 25 }}
+      animate={{ opacity: 1, x: 0 }}
+    >
+      <div className="checkout-section-heading">
+        <span className="checkout-step-number">3</span>
+
+        <div>
+          <h4>
+            {language === "tr" ? "Kart Bilgileri" : "Card Information"}
+          </h4>
+          <p>
+            {language === "tr"
+              ? "Bu bir önizleme ekranıdır; gerçek ödeme alınmaz."
+              : "This is a preview screen; no real payment will be charged."}
+          </p>
+        </div>
+      </div>
+
+      <CardPreview card={cardForm} flipped={cardFlipped} t={t} />
+
+      <label className="checkout-field">
+        <span>{language === "tr" ? "Kart numarası" : "Card number"}</span>
+        <input
+          name="number"
+          inputMode="numeric"
+          value={cardForm.number}
+          onChange={handleCardChange}
+          onFocus={() => setCardFlipped(false)}
+          placeholder={t.cardNumber}
+          maxLength={19}
+          autoComplete="cc-number"
+        />
+      </label>
+
+      <label className="checkout-field">
+        <span>
+          {language === "tr"
+            ? "Kart üzerindeki isim"
+            : "Name on card"}
+        </span>
+        <input
+          name="name"
+          value={cardForm.name}
+          onChange={handleCardChange}
+          onFocus={() => setCardFlipped(false)}
+          placeholder={t.cardName}
+          autoComplete="cc-name"
+        />
+      </label>
+
+      <div className="checkout-row">
+        <label className="checkout-field">
+          <span>
+            {language === "tr"
+              ? "Son kullanma tarihi"
+              : "Expiry date"}
+          </span>
+          <input
+            name="expiry"
+            value={cardForm.expiry}
+            onChange={handleCardChange}
+            onFocus={() => setCardFlipped(false)}
+            placeholder={t.expiry}
+            maxLength={5}
+            autoComplete="cc-exp"
+          />
+        </label>
+
+        <label className="checkout-field">
+          <span>CVC</span>
+          <input
+            name="cvc"
+            inputMode="numeric"
+            value={cardForm.cvc}
+            onChange={handleCardChange}
+            onFocus={() => setCardFlipped(true)}
+            placeholder={t.cvc}
+            maxLength={3}
+            autoComplete="cc-csc"
+          />
+        </label>
+      </div>
+
+      <div className="checkout-navigation">
+        <button
+          type="button"
+          className="checkout-back"
+          onClick={() => setCheckoutStep(2)}
+        >
+          <span>←</span>
+          {language === "tr" ? "Geri" : "Back"}
+        </button>
+
+        <button
+          type="button"
+          className="checkout-next"
+          disabled={
+            cardForm.number.replace(/\s/g, "").length < 16 ||
+            !cardForm.name.trim() ||
+            cardForm.expiry.length < 5 ||
+            cardForm.cvc.length < 3
+          }
+          onClick={() => {
+            setCheckoutError("")
+            setCheckoutStep(4)
+          }}
+        >
+          {language === "tr" ? "Siparişi İncele" : "Review Order"}
+          <span>→</span>
+        </button>
+      </div>
+    </motion.section>
+  )}
+
+  {/* 4 — Sipariş özeti ve ödeme */}
+  {checkoutStep === 4 && (
+    <motion.section
+      className="checkout-section checkout-confirmation"
+      initial={{ opacity: 0, x: 25 }}
+      animate={{ opacity: 1, x: 0 }}
+    >
+      <div className="checkout-section-heading">
+        <span className="checkout-step-number">4</span>
+
+        <div>
+          <h4>
+            {language === "tr"
+              ? "Sipariş Özeti ve Onay"
+              : "Order Review"}
+          </h4>
+          <p>
+            {language === "tr"
+              ? "Bilgilerinizi kontrol edip ödemenizi tamamlayın."
+              : "Review your information and complete the payment."}
+          </p>
+        </div>
+      </div>
+
+      <div className="checkout-review-grid">
+        <article>
+          <span>{language === "tr" ? "Müşteri" : "Customer"}</span>
+          <strong>
+            {addressForm.firstName} {addressForm.lastName}
+          </strong>
+          <p>{addressForm.email}</p>
+          <p>{addressForm.phone}</p>
+
+          <button type="button" onClick={() => setCheckoutStep(1)}>
+            {language === "tr" ? "Düzenle" : "Edit"}
+          </button>
+        </article>
+
+        <article>
+          <span>{language === "tr" ? "Teslimat" : "Delivery"}</span>
+          <strong>
+            {addressForm.district}, {addressForm.city}
+          </strong>
+          <p>{addressForm.address}</p>
+          <p>{addressForm.postalCode}</p>
+
+          <button type="button" onClick={() => setCheckoutStep(2)}>
+            {language === "tr" ? "Düzenle" : "Edit"}
+          </button>
+        </article>
+
+        <article>
+          <span>{language === "tr" ? "Ödeme" : "Payment"}</span>
+          <strong>
+            •••• {cardForm.number.replace(/\s/g, "").slice(-4)}
+          </strong>
+          <p>{cardForm.name}</p>
+
+          <button type="button" onClick={() => setCheckoutStep(3)}>
+            {language === "tr" ? "Düzenle" : "Edit"}
+          </button>
+        </article>
+      </div>
+
+      <div className="checkout-order-total">
+        <span>{t.total}</span>
+        <strong>£{cartTotal.toFixed(2)}</strong>
+      </div>
+
+      <label className="checkout-approval">
+        <input type="checkbox" required />
+        <span>
+          {language === "tr"
+            ? "Teslimat, kart ve sipariş bilgilerimin doğru olduğunu onaylıyorum."
+            : "I confirm that my delivery, card and order information is correct."}
+        </span>
+      </label>
+
+      {checkoutError && (
+        <p className="checkout-error" role="alert">
+          {checkoutError}
+        </p>
+      )}
+
+      <div className="checkout-navigation">
+        <button
+          type="button"
+          className="checkout-back"
+          onClick={() => setCheckoutStep(3)}
+        >
+          <span>←</span>
+          {language === "tr" ? "Geri" : "Back"}
+        </button>
+
+        <motion.button
+          type="submit"
+          className="pay-button"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          {t.payButton}
+        </motion.button>
+      </div>
+    </motion.section>
+  )}
+</form>
                 </>
               ) : (
                 <motion.div

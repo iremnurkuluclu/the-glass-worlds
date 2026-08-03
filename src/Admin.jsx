@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -18,6 +19,7 @@ const adminText = {
     tabMessages: 'Messages',
     tabSupport: 'Support requests',
     tabOrders: 'Orders',
+    tabApplications: 'Seller Applications',
     tabMembers: 'Members',
     tabStats: 'Stats & workshop',
 
@@ -80,6 +82,7 @@ const adminText = {
     tabMessages: 'Mesajlar',
     tabSupport: 'Destek talepleri',
     tabOrders: 'Siparişler',
+    tabApplications: 'Satış Başvuruları',
     tabMembers: 'Üyeler',
     tabStats: 'İstatistikler & Atölye',
 
@@ -135,12 +138,13 @@ const tabs = [
   ['products', 'tabProducts'],
   ['messages', 'tabMessages'],
   ['orders', 'tabOrders'],
+  ['applications', 'tabApplications'],
   ['members', 'tabMembers'],
   ['support', 'tabSupport'],
   ['stats', 'tabStats'],
 ]
 
-function Admin({ language, onLanguageChange, onBack }) {
+function Admin({ language, onBack }) {
   const t = adminText[language] || adminText.en
   const dateLocale = language === 'tr' ? 'tr-TR' : 'en-GB'
   const location = useLocation()
@@ -150,6 +154,15 @@ function Admin({ language, onLanguageChange, onBack }) {
   const view = adminViews.includes(routeView) ? routeView : 'dashboard'
   const setView = (nextView) => navigate(`/admin/${nextView}`)
 
+  const getOrderCode = (order) => {
+    if (order.order_code) return order.order_code
+    const date = new Date(order.created_at)
+    const datePart = Number.isNaN(date.getTime())
+      ? 'ORDER'
+      : date.toISOString().slice(0, 10).replaceAll('-', '')
+    return `TGW-${datePart}-${String(order.id).padStart(4, '0')}`
+  }
+
   const [kits, setKits] = useState([])
   const [messages, setMessages] = useState([])
   const [kitForm, setKitForm] = useState({ name: '', description: '', price: '', image_url: '', materials: '' })
@@ -157,6 +170,10 @@ function Admin({ language, onLanguageChange, onBack }) {
 
   const [supportRequests, setSupportRequests] = useState([])
   const [orders, setOrders] = useState([])
+  const [orderItems, setOrderItems] = useState([])
+  const [sellerApplications, setSellerApplications] = useState([])
+  const [applicationBusy, setApplicationBusy] = useState('')
+const [applicationStatus, setApplicationStatus] = useState('')
   const [members, setMembers] = useState([])
   const [memberSearch, setMemberSearch] = useState('')
   const [memberStatus, setMemberStatus] = useState('')
@@ -168,19 +185,38 @@ function Admin({ language, onLanguageChange, onBack }) {
   const [sessionStatus, setSessionStatus] = useState('')
 
   const loadAdminData = async () => {
-    const [kitsRes, messagesRes, supportRes, ordersRes, sessionsRes] = await Promise.all([
+   const [
+  kitsRes,
+  messagesRes,
+  supportRes,
+  ordersRes,
+  orderItemsRes,
+  sessionsRes,
+  sellerApplicationsRes,
+] = await Promise.all([
       supabase.from('kits').select('*').order('id'),
       supabase.from('messages').select('id, name, email, message, created_at').order('created_at', { ascending: false }),
       supabase.from('support_requests').select('*').order('created_at', { ascending: false }),
       supabase.from('orders').select('*').order('created_at', { ascending: false }),
+      supabase
+        .from('order_items')
+        .select('id, order_id, line_total, admin_amount, seller_amount'),
       supabase.from('workshop_sessions').select('*').order('session_date', { ascending: false }),
+      supabase
+  .from('secondhand_globes')
+  .select('*')
+  .order('created_at', { ascending: false }),
     ])
 
     if (kitsRes.data) setKits(kitsRes.data)
     if (messagesRes.data) setMessages(messagesRes.data)
     if (supportRes.data) setSupportRequests(supportRes.data)
     if (ordersRes.data) setOrders(ordersRes.data)
+    if (orderItemsRes.data) setOrderItems(orderItemsRes.data)
     if (sessionsRes.data) setSessions(sessionsRes.data)
+      if (sellerApplicationsRes.data) {
+  setSellerApplications(sellerApplicationsRes.data)
+}
 
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
@@ -193,10 +229,73 @@ function Admin({ language, onLanguageChange, onBack }) {
 
     setNewMembersCount(count || 0)
   }
+const updateSellerApplication = async (application, nextStatus) => {
+  const actionText =
+    nextStatus === 'approved'
+      ? language === 'tr'
+        ? 'Bu satış başvurusunu onaylamak istiyor musun?'
+        : 'Do you want to approve this seller application?'
+      : language === 'tr'
+        ? 'Bu satış başvurusunu reddetmek istiyor musun?'
+        : 'Do you want to reject this seller application?'
 
+  if (!window.confirm(actionText)) return
+
+  setApplicationBusy(application.id)
+  setApplicationStatus('')
+
+  const { data, error } = await supabase
+    .from('secondhand_globes')
+    .update({
+      approval_status: nextStatus,
+      approved_at:
+        nextStatus === 'approved' ? new Date().toISOString() : null,
+    })
+    .eq('id', application.id)
+    .select()
+    .single()
+
+  setApplicationBusy('')
+
+  if (error) {
+    setApplicationStatus(
+      language === 'tr'
+        ? `İşlem gerçekleştirilemedi: ${error.message}`
+        : `Action failed: ${error.message}`
+    )
+    return
+  }
+
+  setSellerApplications((current) =>
+    current.map((item) => (item.id === application.id ? data : item))
+  )
+
+  setApplicationStatus(
+    nextStatus === 'approved'
+      ? language === 'tr'
+        ? 'Başvuru onaylandı ve ürün mağazada yayınlandı.'
+        : 'The application was approved and published in the shop.'
+      : language === 'tr'
+        ? 'Başvuru reddedildi.'
+        : 'The application was rejected.'
+  )
+}
   useEffect(() => {
     loadAdminData()
   }, [])
+
+  const totalSalesRevenue = orderItems.reduce(
+    (sum, item) => sum + Number(item.line_total || 0),
+    0
+  )
+  const totalAdminEarnings = orderItems.reduce(
+    (sum, item) => sum + Number(item.admin_amount || 0),
+    0
+  )
+  const totalSellerEarnings = orderItems.reduce(
+    (sum, item) => sum + Number(item.seller_amount || 0),
+    0
+  )
 
   const loadMembers = async () => {
     setMemberStatus('')
@@ -410,6 +509,21 @@ function Admin({ language, onLanguageChange, onBack }) {
         <strong>{attendanceThisMonth}</strong>
       </div>
 
+      <div className="dashboard-card dashboard-money-card">
+        <h3>{language === 'tr' ? 'Gerçekleşen toplam satış' : 'Total sales revenue'}</h3>
+        <strong>£{totalSalesRevenue.toFixed(2)}</strong>
+      </div>
+
+      <div className="dashboard-card dashboard-money-card">
+        <h3>{language === 'tr' ? 'Toplam admin kazancı' : 'Total admin earnings'}</h3>
+        <strong>£{totalAdminEarnings.toFixed(2)}</strong>
+      </div>
+
+      <div className="dashboard-card dashboard-money-card seller">
+        <h3>{language === 'tr' ? 'Satıcılara düşen toplam' : 'Total seller earnings'}</h3>
+        <strong>£{totalSellerEarnings.toFixed(2)}</strong>
+      </div>
+
     </div>
   </motion.div>
 )}
@@ -526,7 +640,10 @@ function Admin({ language, onLanguageChange, onBack }) {
                   {orders.map((order) => (
                     <div className="admin-row admin-row-wide" key={order.id}>
                       <div>
-                        <strong>{order.user_email || order.user_id}</strong>
+                        <strong>
+                          {language === 'tr' ? 'Sipariş' : 'Order'} #{getOrderCode(order)}
+                        </strong>
+                        <span>{order.full_name || order.user_email || (language === 'tr' ? 'Kayıtlı müşteri' : 'Registered customer')}</span>
                         <p className="admin-message">
                           {(order.items || []).map((item) => `${item.name} ×${item.quantity}`).join(', ')}
                         </p>
@@ -541,7 +658,279 @@ function Admin({ language, onLanguageChange, onBack }) {
               )}
             </motion.div>
           )}
+{view === 'applications' && (
+  <motion.div
+    key="applications"
+    className="admin-applications-view"
+    initial={{ opacity: 0, y: 12 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -12 }}
+    transition={{ duration: 0.25 }}
+  >
+    <div className="admin-applications-heading">
+      <div>
+       
+        <h3>
+          {language === 'tr'
+            ? 'Satış Başvuruları'
+            : 'Seller Applications'}
+        </h3>
+       
+      </div>
 
+      <strong>
+        {
+          sellerApplications.filter(
+            (application) =>
+              application.approval_status === 'pending'
+          ).length
+        }
+      </strong>
+    </div>
+
+    {applicationStatus && (
+      <p className="panel-status">{applicationStatus}</p>
+    )}
+
+    {sellerApplications.length === 0 ? (
+      <p className="panel-empty">
+        {language === 'tr'
+          ? 'Henüz satış başvurusu bulunmuyor.'
+          : 'There are no seller applications yet.'}
+      </p>
+    ) : (
+      <div className="admin-application-list">
+        {sellerApplications.map((application) => {
+          const applicationPhotos =
+            Array.isArray(application.image_urls) &&
+            application.image_urls.length > 0
+              ? application.image_urls
+              : application.image_url
+                ? [application.image_url]
+                : []
+
+          const productPrice = Number(application.price || 0)
+          const commissionRate = Number(
+            application.commission_rate || 15
+          )
+          const companyAmount =
+            productPrice * (commissionRate / 100)
+          const sellerAmount = productPrice - companyAmount
+
+          const statusText =
+            application.approval_status === 'approved'
+              ? language === 'tr'
+                ? 'Onaylandı'
+                : 'Approved'
+              : application.approval_status === 'rejected'
+                ? language === 'tr'
+                  ? 'Reddedildi'
+                  : 'Rejected'
+                : language === 'tr'
+                  ? 'Onay bekliyor'
+                  : 'Pending'
+
+          return (
+            <article
+              className={`admin-application-card status-${
+                application.approval_status || 'pending'
+              }`}
+              key={application.id}
+            >
+              <div className="admin-application-top">
+                <div>
+                  <span className="admin-application-eyebrow">
+                    {language === 'tr'
+                      ? 'ATÖLYE KAR KÜRESİ'
+                      : 'WORKSHOP SNOW GLOBE'}
+                  </span>
+
+                  <h4>{application.title}</h4>
+
+                  <p>
+                    {application.note ||
+                      (language === 'tr'
+                        ? 'Ürün hikâyesi belirtilmedi.'
+                        : 'No product story was provided.')}
+                  </p>
+                </div>
+
+                <span
+                  className={`admin-application-status ${
+                    application.approval_status || 'pending'
+                  }`}
+                >
+                  {statusText}
+                </span>
+              </div>
+
+              {applicationPhotos.length > 0 && (
+                <div className="admin-application-photos">
+                  {applicationPhotos.map((photo, index) => (
+                    <a
+                      href={photo}
+                      target="_blank"
+                      rel="noreferrer"
+                      key={`${application.id}-${index}`}
+                    >
+                      <img
+                        src={photo}
+                        alt={`${application.title} ${index + 1}`}
+                        style={{
+                          width: '180px',
+                          height: '160px',
+                          maxWidth: '180px',
+                          display: 'block',
+                          objectFit: 'cover',
+                          borderRadius: '12px',
+                        }}
+                      />
+                    </a>
+                  ))}
+                </div>
+              )}
+
+              <div className="admin-application-details">
+                <div>
+                  <span>
+                    {language === 'tr' ? 'Satıcı' : 'Seller'}
+                  </span>
+                  <strong>
+                    {application.seller_name ||
+                      application.maker_name ||
+                      '—'}
+                  </strong>
+                  <small>{application.seller_email || '—'}</small>
+                  <small>{application.phone || '—'}</small>
+                </div>
+
+                <div>
+                  <span>
+                    {language === 'tr'
+                      ? 'Ürün bilgileri'
+                      : 'Product details'}
+                  </span>
+                  <strong>
+                    {language === 'tr'
+                      ? 'Atölyede yapılan kar küresi'
+                      : 'Workshop snow globe'}
+                  </strong>
+                  <small>
+                    {application.production_year || '—'} ·{' '}
+                    {application.condition || '—'}
+                  </small>
+                  <small>{application.dimensions || '—'}</small>
+                </div>
+
+                <div>
+                  <span>
+                    {language === 'tr'
+                      ? 'Malzeme ve kusurlar'
+                      : 'Materials and flaws'}
+                  </span>
+                  <strong>{application.materials || '—'}</strong>
+                  <small>
+                    {application.flaws ||
+                      (language === 'tr'
+                        ? 'Kusur belirtilmedi'
+                        : 'No flaws reported')}
+                  </small>
+                </div>
+
+                <div>
+                  <span>
+                    {language === 'tr'
+                      ? 'Gönderim'
+                      : 'Shipping'}
+                  </span>
+                  <strong>
+                    {application.shipping_region || '—'}
+                  </strong>
+                  <small>
+                    {application.weight
+                      ? `${application.weight}`
+                      : '—'}
+                  </small>
+                </div>
+              </div>
+
+              <div className="admin-application-finance">
+                <div>
+                  <span>
+                    {language === 'tr'
+                      ? 'Satış fiyatı'
+                      : 'Sale price'}
+                  </span>
+                  <strong>£{productPrice.toFixed(2)}</strong>
+                </div>
+
+                <div>
+                  <span>
+                    {language === 'tr'
+                      ? `Şirket komisyonu (%${commissionRate})`
+                      : `Company commission (${commissionRate}%)`}
+                  </span>
+                  <strong>£{companyAmount.toFixed(2)}</strong>
+                </div>
+
+                <div>
+                  <span>
+                    {language === 'tr'
+                      ? 'Satıcı kazancı'
+                      : 'Seller earnings'}
+                  </span>
+                  <strong>£{sellerAmount.toFixed(2)}</strong>
+                </div>
+              </div>
+
+              <div className="admin-application-actions">
+                <button
+                  type="button"
+                  className="application-reject"
+                  disabled={
+                    applicationBusy === application.id ||
+                    application.approval_status === 'rejected'
+                  }
+                  onClick={() =>
+                    updateSellerApplication(
+                      application,
+                      'rejected'
+                    )
+                  }
+                >
+                  {language === 'tr' ? 'Reddet' : 'Reject'}
+                </button>
+
+                <button
+                  type="button"
+                  className="application-approve"
+                  disabled={
+                    applicationBusy === application.id ||
+                    application.approval_status === 'approved'
+                  }
+                  onClick={() =>
+                    updateSellerApplication(
+                      application,
+                      'approved'
+                    )
+                  }
+                >
+                  {applicationBusy === application.id
+                    ? language === 'tr'
+                      ? 'İşleniyor...'
+                      : 'Processing...'
+                    : language === 'tr'
+                      ? 'Onayla ve Yayınla'
+                      : 'Approve and Publish'}
+                </button>
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    )}
+  </motion.div>
+)}
           {view === 'members' && (
             <motion.div
               key="members"
@@ -553,7 +942,7 @@ function Admin({ language, onLanguageChange, onBack }) {
             >
               <div className="admin-members-heading">
                 <div>
-                  <span>The Glass Worlds</span>
+                  
                   <h3>{t.membersTitle}</h3>
                 </div>
                 <span className="admin-member-count">{members.length}</span>

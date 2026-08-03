@@ -3815,14 +3815,7 @@ grid-template-columns:1fr;
   box-shadow: none;
 }
 
-.dashboard-card::before {
-  width: 10px;
-  height: 10px;
-  top: 24px;
-  right: 24px;
-  border-radius: 50%;
-  background: #52bfdf;
-}
+
 
 .dashboard-card:hover {
   border-color: rgba(8, 34, 71, 0.22);
@@ -4179,66 +4172,1095 @@ grid-template-columns:1fr;
   border-color: var(--studio-red);
   background: var(--studio-red);
 }
-@media (max-width: 720px) {
-  .panel-section {
+/* ==================================================
+   DETAYLI TESLİMAT VE ÖDEME EKRANI
+   ================================================== */
+
+.shop-app .checkout-modal {
+  width: min(920px, calc(100vw - 40px));
+  max-width: 920px;
+  max-height: 94vh;
+  padding: clamp(24px, 4vw, 46px);
+  overflow-y: auto;
+  border-radius: 26px;
+  background: #fbfaf6;
+}
+
+.shop-app .checkout-modal > h3 {
+  margin: 0 50px 8px;
+  color: #082247;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.8rem, 4vw, 2.7rem);
+  text-align: center;
+}
+
+.shop-app .checkout-modal > .shop-status {
+  max-width: 600px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.checkout-form-detailed {
+  display: grid;
+  gap: 22px;
+  margin-top: 30px;
+}
+
+.checkout-section {
+  display: grid;
+  gap: 18px;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid rgba(8, 34, 71, 0.13);
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 12px 35px rgba(8, 34, 71, 0.055);
+}
+
+.checkout-section-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(8, 34, 71, 0.1);
+}
+
+.checkout-step-number {
+  display: grid;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #082247;
+  font-size: 0.85rem;
+  font-weight: 800;
+}
+
+.checkout-section-heading h4 {
+  margin: 0 0 5px;
+  color: #082247;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.checkout-section-heading p {
+  margin: 0;
+  color: #68788a;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.checkout-field {
+  display: grid;
+  gap: 7px;
+  color: #243a55;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.shop-app .checkout-form-detailed .checkout-field input {
+  width: 100%;
+  min-height: 49px;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid #cfdae3;
+  border-radius: 11px;
+  outline: none;
+  color: #082247;
+  background: #fbfdff;
+  font: inherit;
+  font-weight: 400;
+}
+
+.shop-app .checkout-form-detailed .checkout-field input:focus {
+  border-color: #4f8ca5;
+  box-shadow: 0 0 0 4px rgba(79, 140, 165, 0.12);
+}
+
+.checkout-form-detailed .checkout-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+/* Kart önizlemesini ortalar */
+.checkout-form-detailed .payment-card,
+.checkout-form-detailed .card-preview {
+  margin: 5px auto 12px;
+}
+
+/* Son onay alanı */
+.checkout-confirmation {
+  background: #f2f6f7;
+}
+
+.checkout-order-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 20px;
+  border-radius: 13px;
+  color: #ffffff;
+  background: #082247;
+}
+
+.checkout-order-total span {
+  font-weight: 600;
+}
+
+.checkout-order-total strong {
+  color: #f2cd72;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.5rem;
+}
+
+.checkout-approval {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  color: #4d5e70;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  cursor: pointer;
+}
+
+.checkout-approval input {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: #082247;
+}
+
+.shop-app .checkout-form-detailed .pay-button {
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  border-radius: 13px;
+  color: #ffffff;
+  background: #082247;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* Kaydırma çubuğu */
+.shop-app .checkout-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.shop-app .checkout-modal::-webkit-scrollbar-thumb {
+  border-radius: 20px;
+  background: #9bb2c0;
+}
+
+.shop-app .checkout-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* Telefon görünümü */
+@media (max-width: 640px) {
+  .shop-app .checkout-modal {
+    width: calc(100vw - 16px);
+    max-height: 96vh;
+    padding: 24px 14px;
+    border-radius: 18px;
+  }
+
+  .shop-app .checkout-modal > h3 {
+    margin-inline: 35px;
+    font-size: 1.7rem;
+  }
+
+  .checkout-section {
+    padding: 18px 14px;
+    border-radius: 15px;
+  }
+
+  .checkout-form-detailed .checkout-row {
+    grid-template-columns: 1fr;
+  }
+
+  .checkout-step-number {
+    flex-basis: 34px;
+    width: 34px;
+    height: 34px;
+  }
+
+  .checkout-section-heading h4 {
+    font-size: 1.15rem;
+  }
+}
+/* ÖDEME EKRANI SADELEŞTİRME */
+
+/* Üstteki 1 Kullanıcı / 2 Teslimat listesini kaldırır */
+.checkout-progress {
+  display: none !important;
+}
+
+/* Başlıklardaki yuvarlak numaraları kaldırır */
+.checkout-step-number {
+  display: none !important;
+}
+
+/* Başlıkların altındaki açıklamaları kaldırır */
+.checkout-section-heading p {
+  display: none !important;
+}
+
+/* Başlıkları sola yaslar */
+.checkout-section-heading {
+  display: block !important;
+  padding-bottom: 14px;
+  text-align: left !important;
+}
+
+.checkout-section-heading h4 {
+  margin: 0 !important;
+  color: #082247 !important;
+  text-align: left !important;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.65rem !important;
+}
+
+/* Kullanıcı, teslimat ve kart alanlarını dengeler */
+.checkout-section {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 28px !important;
+  text-align: left;
+}
+
+/* Etiketlerin ortalanmasını engeller */
+.checkout-field {
+  display: grid !important;
+  gap: 8px;
+  color: #082247 !important;
+  text-align: left !important;
+}
+
+.checkout-field > span {
+  color: #243a55 !important;
+  text-align: left !important;
+}
+
+/* Input ve adres kutusu */
+.shop-app .checkout-form-detailed input,
+.shop-app .checkout-form-detailed textarea {
+  width: 100% !important;
+  box-sizing: border-box;
+  padding: 13px 15px !important;
+  border: 1px solid #c9d7df !important;
+  border-radius: 11px !important;
+  outline: none;
+  color: #082247 !important;
+  background: #ffffff !important;
+  font: inherit;
+}
+
+.shop-app .checkout-form-detailed textarea {
+  min-height: 115px;
+  resize: vertical;
+}
+
+.shop-app .checkout-form-detailed input:focus,
+.shop-app .checkout-form-detailed textarea:focus {
+  border-color: #497f96 !important;
+  box-shadow: 0 0 0 4px rgba(73, 127, 150, 0.12) !important;
+}
+
+/* Geri ve devam butonları */
+.checkout-navigation {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.checkout-navigation-end {
+  justify-content: flex-end !important;
+}
+
+.checkout-back,
+.checkout-next {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  padding: 11px 20px !important;
+  border-radius: 10px !important;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.checkout-back {
+  color: #082247 !important;
+  border: 1px solid #b7c8d2 !important;
+  background: #ffffff !important;
+}
+
+.checkout-back:hover {
+  border-color: #082247 !important;
+  background: #eef4f6 !important;
+}
+
+.checkout-next {
+  color: #ffffff !important;
+  border: 1px solid #082247 !important;
+  background: #082247 !important;
+}
+
+.checkout-next:hover:not(:disabled) {
+  background: #163c67 !important;
+}
+
+.checkout-next:disabled {
+  color: #778593 !important;
+  border-color: #d8e0e5 !important;
+  background: #e8edf0 !important;
+  cursor: not-allowed;
+}
+
+/* Son ekrandaki kötü görünen bilgi listesini kaldırır */
+.checkout-review-grid {
+  display: none !important;
+}
+
+/* Son onay ekranı */
+.checkout-confirmation {
+  background: #ffffff !important;
+}
+
+.checkout-order-total {
+  margin-top: 4px;
+}
+
+/* Mobil */
+@media (max-width: 640px) {
+  .checkout-section {
+    padding: 20px 15px !important;
+  }
+
+  .checkout-section-heading h4 {
+    font-size: 1.4rem !important;
+  }
+
+  .checkout-navigation {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .checkout-navigation button {
     width: 100%;
-    padding: 20px 12px;
-    overflow-x: hidden;
-    box-sizing: border-box;
+  }
+}
+/* Onay kutusunun sıkışmasını düzeltir */
+.checkout-approval {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  width: 100%;
+  margin-top: 6px;
+  color: #526579 !important;
+  text-align: left !important;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.shop-app .checkout-form-detailed .checkout-approval input {
+  flex: 0 0 18px !important;
+  width: 18px !important;
+  height: 18px !important;
+  min-height: 18px !important;
+  margin: 2px 0 0 !important;
+  padding: 0 !important;
+  border-radius: 4px !important;
+  accent-color: #082247;
+}
+
+.checkout-approval span {
+  display: block;
+  flex: 1;
+  width: auto !important;
+  color: #526579 !important;
+  white-space: normal;
+}
+
+/* Daha küçük ve zarif başlıklar */
+.checkout-section-heading h4 {
+  font-size: 1.25rem !important;
+  font-weight: 400 !important;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+}
+
+.shop-app .checkout-modal > h3 {
+  font-size: clamp(1.7rem, 3vw, 2.15rem) !important;
+  font-weight: 400 !important;
+  letter-spacing: -0.01em;
+}
+/* Üretici bölümündeki satıcı programı kartı */
+
+.seller-invitation {
+  align-self: start;
+  display: grid;
+  gap: 18px;
+  padding: 30px !important;
+  overflow: hidden;
+  border: 1px solid rgba(8, 34, 71, 0.13) !important;
+  border-radius: 22px !important;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(94, 65, 135, 0.16), transparent 48%),
+    #fffdf8 !important;
+}
+
+.seller-invitation-eyebrow {
+  color: #7655a1;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+}
+
+.seller-invitation h3 {
+  max-width: 340px;
+  margin: 0;
+  color: #082247;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.75rem, 3vw, 2.45rem);
+  font-weight: 400;
+  line-height: 1.05;
+}
+
+.seller-invitation > p {
+  max-width: 430px;
+  margin: 0;
+  color: #647386;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.seller-invitation-commission {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 15px 17px;
+  border-radius: 13px;
+  background: #f1ebf6;
+}
+
+.seller-invitation-commission strong {
+  color: #654487;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.7rem;
+  font-weight: 500;
+}
+
+.seller-invitation-commission span {
+  color: #554b60;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.seller-invitation > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  min-height: 49px;
+  padding: 12px 20px;
+  border: 0;
+  border-radius: 12px;
+  color: #ffffff;
+  background: #082247;
+  font: inherit;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.seller-invitation > button:hover {
+  background: #173f6d;
+}
+
+@media (max-width: 760px) {
+  .seller-invitation {
+    padding: 23px !important;
   }
 
-  .panel-card {
-    display: block;
+  .seller-invitation h3 {
+    font-size: 1.8rem;
+  }
+}
+/* ADMIN — SATIŞ BAŞVURULARI */
+
+.admin-applications-view {
+  display: grid;
+  gap: 24px;
+}
+
+.admin-applications-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(8, 34, 71, 0.12);
+}
+
+.admin-applications-heading > div > span {
+  color: #927140;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.17em;
+}
+
+.admin-applications-heading h3 {
+  margin: 7px 0 5px;
+  color: #082247;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 400;
+}
+
+.admin-applications-heading p {
+  max-width: 640px;
+  margin: 0;
+  color: #6d7883;
+  line-height: 1.6;
+}
+
+.admin-applications-heading > strong {
+  display: grid;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #082247;
+}
+
+/* Başvuru listesi */
+
+.admin-application-list {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-application-card {
+  display: grid;
+  gap: 20px;
+  padding: clamp(20px, 3vw, 28px);
+  border: 1px solid rgba(8, 34, 71, 0.12);
+  border-left: 4px solid #ca9c45;
+  border-radius: 17px;
+  background: #fffefa;
+  box-shadow: 0 12px 35px rgba(8, 34, 71, 0.06);
+}
+
+.admin-application-card.status-approved {
+  border-left-color: #43805d;
+}
+
+.admin-application-card.status-rejected {
+  border-left-color: #b44b4b;
+  opacity: 0.82;
+}
+
+/* Kart başlığı */
+
+.admin-application-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.admin-application-eyebrow {
+  color: #8c7045;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+}
+
+.admin-application-top h4 {
+  margin: 7px 0;
+  color: #082247;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.4rem, 2.5vw, 1.9rem);
+  font-weight: 400;
+}
+
+.admin-application-top p {
+  max-width: 680px;
+  margin: 0;
+  color: #667482;
+  line-height: 1.55;
+}
+
+/* Başvuru durumu */
+
+.admin-application-status {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: 0.71rem;
+  font-weight: 800;
+}
+
+.admin-application-status.pending {
+  color: #785719;
+  background: #fff0c9;
+}
+
+.admin-application-status.approved {
+  color: #285e40;
+  background: #dff2e6;
+}
+
+.admin-application-status.rejected {
+  color: #8a3030;
+  background: #f8dddd;
+}
+
+/* Fotoğraflar */
+
+.admin-application-photos {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(90px, 1fr));
+  gap: 10px;
+}
+
+.admin-application-photos a {
+  display: block;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #e7ecf0;
+}
+
+.admin-application-photos img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+
+.admin-application-photos a:hover img {
+  transform: scale(1.04);
+}
+
+/* Satıcı ve ürün ayrıntıları */
+
+.admin-application-details {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.admin-application-details > div {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 11px;
+  background: #f4f2ec;
+}
+
+.admin-application-details span,
+.admin-application-finance span {
+  color: #7a838d;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-application-details strong {
+  overflow-wrap: anywhere;
+  color: #193653;
+  font-size: 0.9rem;
+}
+
+.admin-application-details small {
+  overflow-wrap: anywhere;
+  color: #6a7782;
+  line-height: 1.45;
+}
+
+/* Fiyat ve komisyon */
+
+.admin-application-finance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(8, 34, 71, 0.11);
+  border-radius: 12px;
+}
+
+.admin-application-finance > div {
+  display: grid;
+  gap: 7px;
+  padding: 15px 17px;
+  border-right: 1px solid rgba(8, 34, 71, 0.1);
+}
+
+.admin-application-finance > div:last-child {
+  border-right: 0;
+  background: #edf4ef;
+}
+
+.admin-application-finance strong {
+  color: #082247;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.25rem;
+  font-weight: 500;
+}
+
+/* Onay ve ret butonları */
+
+.admin-application-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.admin-application-actions button {
+  min-height: 42px;
+  padding: 10px 17px;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.application-reject {
+  color: #a03d3d;
+  border: 1px solid #d9aaaa;
+  background: #fffafa;
+}
+
+.application-approve {
+  color: #fff;
+  border: 1px solid #315f46;
+  background: #315f46;
+}
+
+.application-reject:hover:not(:disabled) {
+  background: #fae8e8;
+}
+
+.application-approve:hover:not(:disabled) {
+  background: #244c37;
+}
+
+.admin-application-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Tablet */
+
+@media (max-width: 900px) {
+  .admin-application-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-application-photos {
+    grid-template-columns: repeat(3, minmax(80px, 1fr));
+  }
+}
+
+/* Telefon */
+
+@media (max-width: 600px) {
+  .admin-applications-heading,
+  .admin-application-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-application-details,
+  .admin-application-finance {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-application-finance > div {
+    border-right: 0;
+    border-bottom: 1px solid rgba(8, 34, 71, 0.1);
+  }
+
+  .admin-application-finance > div:last-child {
+    border-bottom: 0;
+  }
+
+  .admin-application-photos {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-application-actions {
+    flex-direction: column-reverse;
+  }
+
+  .admin-application-actions button {
     width: 100%;
-    max-width: 100%;
-    padding: 18px 12px;
-    margin: 0;
-    box-sizing: border-box;
+  }
+}
+/* ==================================================
+   KULLANICI PANELİ — SATIŞ BAŞVURULARIM
+   ================================================== */
+
+.account-applications {
+  grid-column: 1 / -1;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.seller-application-account-list {
+  display: grid;
+  gap: 16px;
+}
+
+.seller-account-card {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 22px;
+  padding: 18px;
+  border: 1px solid rgba(8, 34, 71, 0.12);
+  border-left: 4px solid #c69b4b;
+  border-radius: 14px;
+  background: #fffefa;
+}
+
+.seller-account-card.status-approved {
+  border-left-color: #43805d;
+}
+
+.seller-account-card.status-rejected {
+  border-left-color: #b34a4a;
+}
+
+.seller-account-image {
+  width: 170px;
+  height: 170px;
+  overflow: hidden;
+  border-radius: 11px;
+  background: #e8edf0;
+}
+
+.seller-account-image img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.seller-account-image > span {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: #6c7c88;
+  font-size: 2rem;
+}
+
+.seller-account-content {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+}
+
+.seller-account-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.seller-account-title-row small {
+  color: #927140;
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+}
+
+.seller-account-title-row h3 {
+  margin: 6px 0 0;
+  color: #082247;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.45rem;
+  font-weight: 400;
+}
+
+.seller-account-status {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.seller-account-status.pending {
+  color: #765719;
+  background: #fff0c9;
+}
+
+.seller-account-status.approved {
+  color: #285e40;
+  background: #dff2e6;
+}
+
+.seller-account-status.rejected {
+  color: #8b3030;
+  background: #f7dddd;
+}
+
+.seller-account-finance {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid rgba(8, 34, 71, 0.1);
+  border-radius: 10px;
+}
+
+.seller-account-finance > div {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border-right: 1px solid rgba(8, 34, 71, 0.1);
+}
+
+.seller-account-finance > div:last-child {
+  border-right: 0;
+}
+
+.seller-account-finance span {
+  color: #74808b;
+  font-size: 0.65rem;
+}
+
+.seller-account-finance strong {
+  overflow-wrap: anywhere;
+  color: #082247;
+  font-size: 0.9rem;
+}
+
+.seller-account-message {
+  margin: 0;
+  color: #657483;
+  font-size: 0.86rem;
+}
+
+.seller-account-shop-button,
+.seller-account-rejection button,
+.seller-application-empty button {
+  justify-self: start;
+  min-height: 40px;
+  padding: 9px 15px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  background: #082247;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.seller-account-rejection {
+  padding: 14px;
+  border-radius: 10px;
+  color: #813737;
+  background: #fff0f0;
+}
+
+.seller-account-rejection p {
+  margin: 5px 0 12px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.seller-application-empty {
+  display: grid;
+  justify-items: start;
+  gap: 13px;
+}
+
+/* Telefon */
+
+@media (max-width: 700px) {
+  .seller-account-card {
+    grid-template-columns: 1fr;
   }
 
-  .panel-header,
-  .panel-grid,
-  .panel-profile,
-  .panel-messages,
-  .panel-password,
-  .panel-orders,
-  .panel-support {
+  .seller-account-image {
     width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    box-sizing: border-box;
+    height: 220px;
   }
 
-  .panel-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 16px;
+  .seller-account-title-row {
+    flex-direction: column;
   }
 
-  .panel-profile,
-  .panel-messages,
-  .panel-password,
-  .panel-orders,
-  .panel-support {
-    padding: 16px;
+  .seller-account-finance {
+    grid-template-columns: 1fr;
   }
 
-  .panel-profile input,
-  .panel-password input,
-  .panel-support input,
-  .panel-support select,
-  .panel-support textarea {
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
+  .seller-account-finance > div {
+    border-right: 0;
+    border-bottom: 1px solid rgba(8, 34, 71, 0.1);
   }
 
-  .avatar-upload {
-    flex-wrap: wrap;
+  .seller-account-finance > div:last-child {
+    border-bottom: 0;
+  }
+}
+/* Dar ekranlarda kullanıcı panelini tek sütuna geçirir */
+
+@media (max-width: 1000px) {
+  .account-page.studio-account-page .account-shell {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    width: calc(100% - 28px) !important;
+    max-width: none !important;
+    margin: 0 auto !important;
+    gap: 18px !important;
   }
 
-  .avatar-upload-button {
-    max-width: 100%;
-    white-space: normal;
+  .account-page.studio-account-page .account-rail {
+    position: static !important;
+    grid-column: 1 !important;
+    width: 100% !important;
+  }
+
+  .account-page.studio-account-page .account-content {
+    grid-column: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .account-page.studio-account-page .account-applications {
+    width: 100% !important;
+    max-width: none !important;
+  }
+}
+
+@media (max-width: 650px) {
+  .account-page.studio-account-page .seller-account-card {
+    grid-template-columns: 1fr !important;
+  }
+
+  .account-page.studio-account-page .seller-account-image {
+    width: 100% !important;
+    height: 230px !important;
   }
 }

@@ -1,10 +1,11 @@
-
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useState } from 'react'
 import { useLanguage } from './LanguageContext'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import Shop from './Shop.jsx'
+import SellerPage from './SellerPage.jsx'
 import Admin from './Admin.jsx'
 import UserPanel from './UserPanel.jsx'
 import AnimatedGlobeLogo from './AnimatedGlobeLogo.jsx'
@@ -38,6 +39,7 @@ const navigate = useNavigate()
 const isPanelRoute = location.pathname === '/panel' || location.pathname.startsWith('/panel/')
 const isShopRoute = location.pathname === '/shop' || location.pathname.startsWith('/shop/')
 const isAdminRoute = location.pathname === '/admin' || location.pathname.startsWith('/admin/')
+const isSellerRoute = location.pathname === '/sell'
 const OWNER_EMAIL = 'nirem587@gmail.com'
 const [profileData, setProfileData] = useState({ full_name: '', avatar_url: '', address: '' })
 const [profileStatus, setProfileStatus] = useState('')
@@ -64,6 +66,15 @@ const [otpCode, setOtpCode] = useState('')
 const [newPassword, setNewPassword] = useState('')
 
 const [authMessage, setAuthMessage] = useState('')
+const [showScrollTop, setShowScrollTop] = useState(false)
+
+useEffect(() => {
+  const handleScroll = () => setShowScrollTop(window.scrollY > 500)
+
+  handleScroll()
+  window.addEventListener('scroll', handleScroll, { passive: true })
+  return () => window.removeEventListener('scroll', handleScroll)
+}, [])
 
 
 const loadPanelData = async (currentSession) => {
@@ -161,13 +172,13 @@ useEffect(() => {
 }, [session])
 
 useEffect(() => {
-  if (sessionChecked && (isPanelRoute || isShopRoute) && !session) {
+ if (sessionChecked && (isPanelRoute || isShopRoute || isSellerRoute) && !session) {
     navigate('/', { replace: true })
   }
   if (sessionChecked && isAdminRoute && (!session || session.user.email !== OWNER_EMAIL)) {
     navigate('/', { replace: true })
   }
-}, [sessionChecked, isPanelRoute, isShopRoute, isAdminRoute, session, navigate])
+}, [sessionChecked, isPanelRoute, isShopRoute, isSellerRoute, isAdminRoute, session, navigate])
 
 const handleProfileInputChange = (event) => {
   const { name, value } = event.target
@@ -483,7 +494,7 @@ const authText = {
     bookSeatLine1: 'Book',
     bookSeatLine2: 'a seat',
     nextClass: 'Next class',
-    nextClassTime: 'August 2, 2026 · 11:00 AM',
+    nextClassTime: 'Saturday - 11:00 AM',
 
     processLabel: 'Our process',
     processTitleLine1: 'From tiny pieces',
@@ -602,7 +613,7 @@ const authText = {
     bookSeatLine1: 'Yer',
     bookSeatLine2: 'ayırt',
     nextClass: 'Sıradaki atölye',
-    nextClassTime: '2 Ağustos 2026 · 11:00',
+    nextClassTime: 'Cumartesi - 11:00',
 
     processLabel: 'Sürecimiz',
     processTitleLine1: 'Küçük parçalardan',
@@ -686,14 +697,15 @@ const authText = {
 
 const t = authText[language]
   return (
-    <main className="page">
-      {!isPanelRoute && !isShopRoute && !isAdminRoute && (
+  <>
+  <main className={`page${isSellerRoute ? ' seller-route-shell' : ''}`}>
+     {!isPanelRoute && !isShopRoute && !isSellerRoute && !isAdminRoute && (
       <nav className="navbar">
 <div className="brand">
   <AnimatedGlobeLogo />
   <span>The Glass Worlds</span>
 </div>
-{!isPanelRoute && !isShopRoute && !isAdminRoute && (
+{!isPanelRoute && !isShopRoute && !isSellerRoute && !isAdminRoute && (
 <div className="nav-links">
           <a href="#process">{t.navProcess}</a>
           <a href="#gallery">{t.navGallery}</a>
@@ -1011,7 +1023,27 @@ const t = authText[language]
     exit={{ opacity: 0, y: -16 }}
     transition={{ duration: 0.35, ease: 'easeOut' }}
   >
-    <Admin session={session} language={language} onLanguageChange={setLanguage} onBack={() => navigate('/')} />
+        <Admin
+      session={session}
+      language={language}
+      onLanguageChange={setLanguage}
+      onBack={() => navigate('/')}
+    />
+  </motion.div>
+) : isSellerRoute && session ? (
+  <motion.div
+    key="seller"
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -16 }}
+    transition={{ duration: 0.35, ease: 'easeOut' }}
+  >
+    <SellerPage
+      session={session}
+      language={language}
+      onBack={() => navigate('/')}
+      onShop={() => navigate('/shop/makers')}
+    />
   </motion.div>
 ) : isShopRoute && session ? (
   <motion.div
@@ -1029,25 +1061,34 @@ const t = authText[language]
       onOrderComplete={(order) => setOrders((current) => [order, ...current])}
     />
   </motion.div>
-) : isPanelRoute && session ? (
-  <UserPanel
-    session={session}
-   language={language}
-    profileData={profileData}
-    profileStatus={profileStatus}
-    onProfileChange={handleProfileInputChange}
-    onProfileSubmit={handleProfileUpdate}
-    onAvatarUpload={handleAvatarUpload}
-    orders={orders}
-    supportRequests={supportRequests}
-    supportForm={supportForm}
-    supportStatus={supportStatus}
-    onSupportChange={handleSupportInputChange}
-    onSupportSubmit={handleSupportSubmit}
-    onSignOut={handleSignOut}
-    onBack={() => navigate('/')}
-  />
-) : authMode === 'legacy-panel' ? (
+ ) : isPanelRoute && session ? (
+  <motion.div
+    key="user-panel"
+    initial={{ opacity: 0, y: 16 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -16 }}
+    transition={{ duration: 0.35, ease: "easeOut" }}
+  >
+    <UserPanel
+      session={session}
+      language={language}
+      profileData={profileData}
+      profileStatus={profileStatus}
+      onProfileChange={handleProfileInputChange}
+      onProfileSubmit={handleProfileUpdate}
+      onAvatarUpload={handleAvatarUpload}
+      orders={orders}
+      supportRequests={supportRequests}
+      supportForm={supportForm}
+      supportStatus={supportStatus}
+      onSupportChange={handleSupportInputChange}
+      onSupportSubmit={handleSupportSubmit}
+      onSignOut={handleSignOut}
+      onBack={() => navigate("/")}
+    />
+  </motion.div>
+)
+ : authMode === 'legacy-panel' ? (
   <motion.section
     key="panel"
     className="panel-section"
@@ -1505,9 +1546,6 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
             </p>
             <motion.button
               className="private-button"
-              onClick={() =>
-               document.getElementById('contact')?.scrollIntoView({ behavior: 'smooth' })
-     }
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.96 }}
             >
@@ -1596,13 +1634,11 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
     </motion.form>
   </motion.div>
 </section>
-  
   </motion.div>
 )}
 </AnimatePresence>
-
-
-<footer className="footer">
+</main>
+<footer className="footer global-footer">
   <div>
     <strong>The Glass Worlds</strong>
     <p>{t.footerTagline}</p>
@@ -1622,9 +1658,22 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
     <p>Instagram</p>
   </div>
 </footer>
-
-</main>
-
+{showScrollTop && (
+  <motion.button
+    type="button"
+    className="scroll-to-top"
+    aria-label={language === 'tr' ? 'Sayfanın başına dön' : 'Back to top'}
+    title={language === 'tr' ? 'Başa dön' : 'Back to top'}
+    initial={{ opacity: 0, scale: 0.8, y: 10 }}
+    animate={{ opacity: 1, scale: 1, y: 0 }}
+    whileHover={{ scale: 1.08, y: -2 }}
+    whileTap={{ scale: 0.94 }}
+    onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+  >
+    <span aria-hidden="true">↑</span>
+  </motion.button>
+)}
+  </>
   )
 }
 export default App

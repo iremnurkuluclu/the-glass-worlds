@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from './supabaseClient'
 import AnimatedGlobeLogo from './AnimatedGlobeLogo'
 
+
 const copy = {
   en: {
     eyebrow: 'Account',
@@ -19,6 +20,12 @@ const copy = {
     visitsEmpty: 'Your workshop registrations will appear here.',
     orders: 'Order history',
     ordersEmpty: 'You have not bought anything yet.',
+    applications: 'My seller applications',
+applicationsEmpty: 'You have not submitted a snow globe yet.',
+applicationPending: 'Pending review',
+applicationApproved: 'Approved and published',
+applicationRejected: 'Rejected',
+sellerEarning: 'Your estimated earnings',
     orderNumber: 'Order',
     orderTotal: 'Total',
     trackingReceived: 'Order received',
@@ -51,6 +58,12 @@ const copy = {
     visitsEmpty: 'Etkinlik kayıtların burada görünecek.',
     orders: 'Sipariş özetim',
     ordersEmpty: 'Henüz bir alışverişin yok.',
+    applications: 'Satış başvurularım',
+applicationsEmpty: 'Henüz bir kar küresi satış başvurun yok.',
+applicationPending: 'Onay bekliyor',
+applicationApproved: 'Onaylandı ve yayınlandı',
+applicationRejected: 'Reddedildi',
+sellerEarning: 'Tahmini kazancın',
     orderNumber: 'Sipariş',
     orderTotal: 'Toplam',
     trackingReceived: 'Sipariş alındı',
@@ -90,10 +103,27 @@ function UserPanel({
   const t = copy[language] || copy.en
   const location = useLocation()
   const navigate = useNavigate()
-  const panelSections = ['profile', 'visits', 'orders', 'support']
+ const panelSections = [
+  'profile',
+  'visits',
+  'orders',
+  'applications',
+  'support',
+]
   const routeSection = location.pathname.split('/')[2]
   const activeSection = panelSections.includes(routeSection) ? routeSection : 'profile'
+
+  const getOrderCode = (order) => {
+    if (order.order_code) return order.order_code
+    const date = new Date(order.created_at)
+    const datePart = Number.isNaN(date.getTime())
+      ? 'ORDER'
+      : date.toISOString().slice(0, 10).replaceAll('-', '')
+    return `TGW-${datePart}-${String(order.id).padStart(4, '0')}`
+  }
   const [bookings, setBookings] = useState([])
+  const [sellerApplications, setSellerApplications] = useState([])
+  const [sellerOrderItems, setSellerOrderItems] = useState([])
   const [expandedTracking, setExpandedTracking] = useState(null)
   const trackingSteps = [
     ['received', t.trackingReceived],
@@ -116,22 +146,46 @@ function UserPanel({
     return index < 0 ? 0 : index
   }
 
-  useEffect(() => {
-    const loadBookings = async () => {
-      const { data } = await supabase
+ useEffect(() => {
+  const loadPanelData = async () => {
+    const [bookingsResult, applicationsResult, salesResult] = await Promise.all([
+      supabase
         .from('event_rsvps')
         .select('id, event_label, created_at')
         .eq('user_id', session.user.id)
-        .order('created_at', { ascending: false })
+        .order('created_at', { ascending: false }),
 
-      setBookings(data || [])
-    }
+      supabase
+        .from('secondhand_globes')
+        .select(
+          'id, title, price, image_url, image_urls, approval_status, commission_rate, rejection_reason, created_at'
+        )
+        .eq('seller_id', session.user.id)
+        .order('created_at', { ascending: false }),
 
-    loadBookings()
-  }, [session.user.id])
+      supabase
+        .from('order_items')
+        .select('id, product_id, quantity, line_total, admin_amount, seller_amount')
+        .eq('seller_id', session.user.id),
+    ])
 
+    setBookings(bookingsResult.data || [])
+    setSellerApplications(applicationsResult.data || [])
+    setSellerOrderItems(salesResult.data || [])
+  }
+
+  loadPanelData()
+}, [session.user.id])
   return (
-    <main className="account-page studio-account-page">
+  <main
+  className="account-page studio-account-page"
+  style={{
+    display: "block",
+    width: "100vw",
+    maxWidth: "none",
+    margin: 0,
+  }}
+>
       <header className="account-topbar">
         <button type="button" className="account-brand account-brand-button" onClick={onBack} aria-label={t.back}><AnimatedGlobeLogo compact />The Glass Worlds</button>
         <div className="account-header-icons">
@@ -150,7 +204,17 @@ function UserPanel({
         </div>
       </header>
 
-      <div className="account-shell">
+      <div
+  className="account-shell"
+  style={{
+    display: "grid",
+    gridTemplateColumns: "230px minmax(0, 1fr)",
+    width: "min(1180px, calc(100% - 40px))",
+    maxWidth: "1180px",
+    margin: "0 auto",
+    gap: "34px",
+  }}
+>
       <aside className="account-rail">
         <span>{t.eyebrow}</span>
         <strong>{profileData.full_name || session.user.email.split('@')[0]}</strong>
@@ -158,11 +222,34 @@ function UserPanel({
           <Link className={activeSection === 'profile' ? 'active' : ''} to="/panel/profile">{t.profile}</Link>
           <Link className={activeSection === 'visits' ? 'active' : ''} to="/panel/visits">{t.visits}</Link>
           <Link className={activeSection === 'orders' ? 'active' : ''} to="/panel/orders">{t.orders}</Link>
+          <Link
+  className={activeSection === 'applications' ? 'active' : ''}
+  to="/panel/applications"
+>
+  {t.applications}
+</Link>
           <Link className={activeSection === 'support' ? 'active' : ''} to="/panel/support">{t.support}</Link>
         </nav>
-        <button type="button" className="account-logout" onClick={onSignOut}>{t.logout}</button>
+        <button
+  type="button"
+  className="account-logout"
+  onClick={onSignOut}
+  style={{
+    color: "#c44444",
+    WebkitTextFillColor: "#c44444",
+  }}
+>
+  {t.logout}
+</button>
       </aside>
-      <div className="account-content">
+     <div
+  className="account-content"
+  style={{
+    gridColumn: "2",
+    width: "100%",
+    minWidth: 0,
+  }}
+>
       <section className="account-intro">
         <span>{t.eyebrow}</span>
         <h1>{t.title}</h1>
@@ -224,7 +311,7 @@ function UserPanel({
                 <li className="account-order-item" key={order.id}>
                   <div className="account-order-summary">
                     <div>
-                      <span>{t.orderNumber} #{String(order.id).slice(-8).toUpperCase()}</span>
+                      <span>{t.orderNumber} #{getOrderCode(order)}</span>
                       <strong>{order.created_at ? new Date(order.created_at).toLocaleDateString(language === 'tr' ? 'tr-TR' : 'en-GB') : (language === 'tr' ? 'Yeni sipariş' : 'New order')}</strong>
                     </div>
                     <em>{t.orderTotal}: £{Number(order.total).toFixed(2)}</em>
@@ -265,6 +352,224 @@ function UserPanel({
           )}
         </section>}
 
+{activeSection === 'applications' && (
+  <section
+    className="account-card account-applications account-page-card"
+    id="account-applications"
+  >
+    <div className="account-card-heading">
+      <h2>{t.applications}</h2>
+      <span>{sellerApplications.length}</span>
+    </div>
+
+    {sellerApplications.length === 0 ? (
+      <div className="seller-application-empty">
+        <p className="account-empty">{t.applicationsEmpty}</p>
+
+        <button
+          type="button"
+          onClick={() => navigate('/sell')}
+        >
+          {language === 'tr'
+            ? 'Kar Küreni Sat'
+            : 'Sell Your Snow Globe'}
+        </button>
+      </div>
+    ) : (
+      <div className="seller-application-account-list">
+        {sellerApplications.map((application) => {
+          const status =
+            application.approval_status || 'pending'
+
+          const statusLabel =
+            status === 'approved'
+              ? t.applicationApproved
+              : status === 'rejected'
+                ? t.applicationRejected
+                : t.applicationPending
+
+          const price = Number(application.price || 0)
+          const commissionRate = Number(
+            application.commission_rate || 15
+          )
+          const estimatedEarning =
+            price * ((100 - commissionRate) / 100)
+
+          const applicationSales = sellerOrderItems.filter(
+            (item) => String(item.product_id) === String(application.id)
+          )
+          const soldQuantity = applicationSales.reduce(
+            (sum, item) => sum + Number(item.quantity || 0),
+            0
+          )
+          const totalSales = applicationSales.reduce(
+            (sum, item) => sum + Number(item.line_total || 0),
+            0
+          )
+          const totalCommission = applicationSales.reduce(
+            (sum, item) => sum + Number(item.admin_amount || 0),
+            0
+          )
+          const actualEarning = applicationSales.reduce(
+            (sum, item) => sum + Number(item.seller_amount || 0),
+            0
+          )
+
+          const applicationImage =
+            Array.isArray(application.image_urls) &&
+            application.image_urls.length > 0
+              ? application.image_urls[0]
+              : application.image_url
+
+          return (
+            <article
+              className={`seller-account-card status-${status}`}
+              key={application.id}
+            >
+              <div className="seller-account-image">
+                {applicationImage ? (
+                  <img
+                    src={applicationImage}
+                    alt={application.title}
+                  />
+                ) : (
+                  <span aria-hidden="true">◌</span>
+                )}
+              </div>
+
+              <div className="seller-account-content">
+                <div className="seller-account-title-row">
+                  <div>
+                    <small>
+                      {language === 'tr'
+                        ? 'ATÖLYE KAR KÜRESİ'
+                        : 'WORKSHOP SNOW GLOBE'}
+                    </small>
+
+                    <h3>{application.title}</h3>
+                  </div>
+
+                  <span className={`seller-account-status ${status}`}>
+                    {statusLabel}
+                  </span>
+                </div>
+
+                <div className="seller-account-finance">
+                  <div>
+                    <span>
+                      {language === 'tr'
+                        ? 'Satış fiyatı'
+                        : 'Sale price'}
+                    </span>
+                    <strong>£{price.toFixed(2)}</strong>
+                  </div>
+
+                  <div>
+                    <span>{t.sellerEarning}</span>
+                    <strong>
+                      £{estimatedEarning.toFixed(2)}
+                    </strong>
+                  </div>
+
+                  <div>
+                    <span>
+                      {language === 'tr'
+                        ? 'Başvuru tarihi'
+                        : 'Application date'}
+                    </span>
+                    <strong>
+                      {application.created_at
+                        ? new Date(
+                            application.created_at
+                          ).toLocaleDateString(
+                            language === 'tr'
+                              ? 'tr-TR'
+                              : 'en-GB'
+                          )
+                        : '—'}
+                    </strong>
+                  </div>
+                </div>
+
+                <div
+                  className="seller-account-finance seller-account-sales-summary"
+                  style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))' }}
+                >
+                  <div>
+                    <span>{language === 'tr' ? 'Satılan adet' : 'Units sold'}</span>
+                    <strong>{soldQuantity}</strong>
+                  </div>
+
+                  <div>
+                    <span>{language === 'tr' ? 'Toplam satış' : 'Total sales'}</span>
+                    <strong>£{totalSales.toFixed(2)}</strong>
+                  </div>
+
+                  <div>
+                    <span>{language === 'tr' ? 'Kesilen komisyon' : 'Commission'}</span>
+                    <strong>£{totalCommission.toFixed(2)}</strong>
+                  </div>
+
+                  <div>
+                    <span>{language === 'tr' ? 'Gerçek kazancım' : 'Actual earnings'}</span>
+                    <strong>£{actualEarning.toFixed(2)}</strong>
+                  </div>
+                </div>
+
+                {status === 'pending' && (
+                  <p className="seller-account-message">
+                    {language === 'tr'
+                      ? 'Başvurun inceleniyor. Sonuç burada güncellenecek.'
+                      : 'Your application is being reviewed. Its status will be updated here.'}
+                  </p>
+                )}
+
+                {status === 'approved' && (
+                  <button
+                    type="button"
+                    className="seller-account-shop-button"
+                    onClick={() => navigate('/shop/makers')}
+                  >
+                    {language === 'tr'
+                      ? 'Mağazada Gör'
+                      : 'View in Shop'}
+                    <span>→</span>
+                  </button>
+                )}
+
+                {status === 'rejected' && (
+                  <div className="seller-account-rejection">
+                    <strong>
+                      {language === 'tr'
+                        ? 'Başvuru sonucu'
+                        : 'Application result'}
+                    </strong>
+
+                    <p>
+                      {application.rejection_reason ||
+                        (language === 'tr'
+                          ? 'Başvurun mağazada yayınlanmak için uygun bulunmadı.'
+                          : 'Your application was not approved for publication.')}
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={() => navigate('/sell')}
+                    >
+                      {language === 'tr'
+                        ? 'Yeni Başvuru Oluştur'
+                        : 'Create a New Application'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </article>
+          )
+        })}
+      </div>
+    )}
+  </section>
+)}
         {activeSection === 'support' && <section className="account-card account-support account-page-card" id="account-support">
           <div className="account-card-heading"><h2>{t.support}</h2></div>
           <form onSubmit={onSupportSubmit}>

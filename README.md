@@ -169,3 +169,33 @@ Case'de ayrıca istenen, sadece atölye sahibinin (benim hesabımın) erişebild
 - Mağaza ve sipariş yönetimi güncelledim.
 - Yönetici üye yönetimi eklendim.
 - “Beyaz Kuğu” ve “Denizden Bir Parça” kar kürelerinin bilgilerini güncelledim.
+
+- ### Özel Atölye Randevu Sistemi
+
+- Kullanıcılar ana sayfa üzerinden özel atölye talebi oluşturabilir.
+- Talepte tarih, saat, kişi sayısı, telefon ve açıklama bilgileri alınır.
+- Gönderilen talepler yönetici paneline iletilir.
+- Yönetici talebi onaylayabilir veya reddedebilir.
+- Yönetici randevu tarihini, saatini ve kullanıcıya gösterilecek notu düzenleyebilir.
+- Kullanıcı talebinin durumunu **Hesabım → Etkinlik kayıtlarım** bölümünden takip edebilir.
+
+### Ziyaretçi İstatistikleri
+
+Yönetici panelindeki **İstatistikler & Atölye** bölümünde:
+
+- Günlük tekil ziyaretçi sayısı
+- Aylık tekil ziyaretçi sayısı
+- Toplam tekil ziyaretçi sayısı
+- Yeni üye sayısı
+- Atölye katılım sayısı
+- Onay bekleyen özel atölye talepleri
+
+görüntülenebilir.
+
+### Özel Atölye Talep Durumları
+
+- **Onay bekliyor:** Talep yönetici tarafından henüz incelenmemiştir.
+- **Onaylandı:** Yönetici tarih ve saati onaylamıştır.
+- **Reddedildi:** Talep yönetici tarafından uygun bulunmamıştır.
+
+Veriler Supabase üzerinde saklanır ve Row Level Security politikalarıyla kullanıcı erişimi sınırlandırılır.

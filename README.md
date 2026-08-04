@@ -188,14 +188,8 @@ Yönetici panelindeki **İstatistikler & Atölye** bölümünde:
 - Toplam tekil ziyaretçi sayısı
 - Yeni üye sayısı
 - Atölye katılım sayısı
-- Onay bekleyen özel atölye talepleri
+- Onay bekleyen özel atölye talepleri görüntülenebilir.
 
-görüntülenebilir.
 
-### Özel Atölye Talep Durumları
 
-- **Onay bekliyor:** Talep yönetici tarafından henüz incelenmemiştir.
-- **Onaylandı:** Yönetici tarih ve saati onaylamıştır.
-- **Reddedildi:** Talep yönetici tarafından uygun bulunmamıştır.
 
-Veriler Supabase üzerinde saklanır ve Row Level Security politikalarıyla kullanıcı erişimi sınırlandırılır.

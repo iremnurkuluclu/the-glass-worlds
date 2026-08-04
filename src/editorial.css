@@ -4284,3 +4284,198 @@ button.account-logout:active {
   padding: 0;
   font-size: 0.9rem;
 }
+/* Admin sipariş ve üye ayrıntı pencereleri */
+.admin-order-row-actions {
+  display: grid;
+  justify-items: end;
+  gap: 12px;
+}
+
+.admin-detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 4000;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(11, 32, 56, 0.68);
+  backdrop-filter: blur(5px);
+}
+
+.admin-detail-modal {
+  position: relative;
+  width: min(820px, 100%);
+  max-height: calc(100vh - 44px);
+  overflow-y: auto;
+  padding: 34px;
+  border: 1px solid var(--editorial-line);
+  border-radius: 16px;
+  color: var(--editorial-navy);
+  background: var(--editorial-paper);
+  box-shadow: 0 28px 90px rgba(11, 32, 56, 0.3);
+}
+
+.admin-member-detail-modal {
+  width: min(900px, 100%);
+}
+
+.admin-detail-close {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  color: #fff;
+  background: var(--editorial-navy);
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.admin-detail-eyebrow {
+  color: var(--editorial-red);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.admin-detail-modal h3 {
+  margin: 7px 48px 20px 0;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1;
+}
+
+.admin-detail-modal h4 {
+  margin: 28px 0 12px;
+  font-size: 1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-detail-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.admin-detail-summary p {
+  margin: 0;
+  padding: 13px;
+  border: 1px solid var(--editorial-line);
+  border-radius: 9px;
+  background: #fff;
+}
+
+.admin-detail-field {
+  display: grid;
+  gap: 7px;
+  margin: 18px 0;
+  font-weight: 700;
+}
+
+.admin-detail-field select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--editorial-line);
+  border-radius: 9px;
+  color: var(--editorial-navy);
+  background: #fff;
+  font: inherit;
+}
+
+.admin-detail-items {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-detail-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  padding: 14px;
+  border: 1px solid var(--editorial-line);
+  border-radius: 10px;
+  color: var(--editorial-navy);
+  background: #fff;
+  text-align: left;
+}
+
+.admin-detail-item > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-detail-item span {
+  color: var(--editorial-slate);
+}
+
+.admin-detail-money {
+  display: grid;
+  justify-items: end;
+  gap: 3px;
+  min-width: 160px;
+  font-size: 0.88rem;
+}
+
+.admin-detail-item-button {
+  cursor: pointer;
+}
+
+.admin-detail-item-button:hover {
+  border-color: var(--editorial-gold);
+  background: var(--editorial-ivory);
+}
+
+.admin-member-profile-button {
+  width: fit-content;
+  margin-top: 10px;
+  padding: 7px 11px;
+  border: 1px solid var(--editorial-line);
+  border-radius: 7px;
+  color: var(--editorial-navy);
+  background: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .admin-order-row-actions {
+    width: 100%;
+    justify-items: stretch;
+  }
+
+  .admin-detail-overlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .admin-detail-modal {
+    width: 100%;
+    max-height: 92vh;
+    padding: 28px 18px;
+    border-radius: 18px 18px 0 0;
+  }
+
+  .admin-detail-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-detail-item {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-detail-money {
+    justify-items: start;
+    min-width: 0;
+  }
+}

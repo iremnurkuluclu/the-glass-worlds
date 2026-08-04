@@ -169,8 +169,14 @@ function Admin({ language, onBack }) {
   const [kitStatus, setKitStatus] = useState('')
 
   const [supportRequests, setSupportRequests] = useState([])
+  const [supportActionStatus, setSupportActionStatus] = useState('')
   const [orders, setOrders] = useState([])
   const [orderItems, setOrderItems] = useState([])
+  const [selectedOrder, setSelectedOrder] = useState(null)
+  const [selectedOrderItems, setSelectedOrderItems] = useState([])
+  const [orderDetailLoading, setOrderDetailLoading] = useState(false)
+  const [orderActionStatus, setOrderActionStatus] = useState('')
+  const [orderStatusBusy, setOrderStatusBusy] = useState(false)
   const [sellerApplications, setSellerApplications] = useState([])
   const [applicationBusy, setApplicationBusy] = useState('')
 const [applicationStatus, setApplicationStatus] = useState('')
@@ -178,6 +184,12 @@ const [applicationStatus, setApplicationStatus] = useState('')
   const [memberSearch, setMemberSearch] = useState('')
   const [memberStatus, setMemberStatus] = useState('')
   const [memberBusy, setMemberBusy] = useState('')
+  const [selectedMember, setSelectedMember] = useState(null)
+  const [memberProfile, setMemberProfile] = useState(null)
+  const [memberOrders, setMemberOrders] = useState([])
+  const [memberBookings, setMemberBookings] = useState([])
+  const [memberDetailLoading, setMemberDetailLoading] = useState(false)
+  const [memberDetailStatus, setMemberDetailStatus] = useState('')
 
   const [newMembersCount, setNewMembersCount] = useState(0)
   const [sessions, setSessions] = useState([])
@@ -206,7 +218,7 @@ const [applicationStatus, setApplicationStatus] = useState('')
       supabase.from('orders').select('*').order('created_at', { ascending: false }),
       supabase
         .from('order_items')
-        .select('id, order_id, line_total, admin_amount, seller_amount'),
+        .select('*'),
       supabase.from('workshop_sessions').select('*').order('session_date', { ascending: false }),
       supabase
   .from('secondhand_globes')
@@ -400,6 +412,92 @@ const updateSellerApplication = async (application, nextStatus) => {
     return `${member.full_name || ''} ${member.email || ''}`.toLocaleLowerCase(language === 'tr' ? 'tr-TR' : 'en-GB').includes(query)
   })
 
+  const openMemberDetails = async (member) => {
+    setSelectedMember(member)
+    setMemberProfile(null)
+    setMemberOrders([])
+    setMemberBookings([])
+    setMemberDetailStatus('')
+    setMemberDetailLoading(true)
+
+    const [profileResult, ordersResult, bookingsResult] = await Promise.all([
+      supabase.from('profiles').select('*').eq('id', member.id).maybeSingle(),
+      supabase.from('orders').select('*').eq('user_id', member.id).order('created_at', { ascending: false }),
+      supabase.from('event_rsvps').select('*').eq('user_id', member.id).order('created_at', { ascending: false }),
+    ])
+
+    setMemberDetailLoading(false)
+    if (profileResult.error || ordersResult.error || bookingsResult.error) {
+      console.error('Member detail could not be loaded:', {
+        profile: profileResult.error,
+        orders: ordersResult.error,
+        bookings: bookingsResult.error,
+      })
+      setMemberDetailStatus(
+        language === 'tr'
+          ? 'Üye ayrıntıları yüklenemedi. Admin RLS izinlerini kontrol et.'
+          : 'Member details could not be loaded. Check the admin RLS policies.'
+      )
+      return
+    }
+
+    setMemberProfile(profileResult.data || null)
+    setMemberOrders(ordersResult.data || [])
+    setMemberBookings(bookingsResult.data || [])
+  }
+
+  const openOrderDetails = async (order) => {
+    setSelectedOrder(order)
+    setSelectedOrderItems([])
+    setOrderActionStatus('')
+    setOrderDetailLoading(true)
+
+    const { data, error } = await supabase
+      .from('order_items')
+      .select('*')
+      .eq('order_id', order.id)
+      .order('id', { ascending: true })
+
+    setOrderDetailLoading(false)
+    if (error) {
+      console.error('Order detail could not be loaded:', error)
+      setOrderActionStatus(
+        language === 'tr' ? 'Sipariş ayrıntısı yüklenemedi.' : 'Order details could not be loaded.'
+      )
+      return
+    }
+
+    setSelectedOrderItems(data || [])
+  }
+
+  const updateOrderStatus = async (status) => {
+    if (!selectedOrder) return
+    setOrderStatusBusy(true)
+    setOrderActionStatus('')
+
+    const { data, error } = await supabase
+      .from('orders')
+      .update({ status })
+      .eq('id', selectedOrder.id)
+      .select()
+      .single()
+
+    setOrderStatusBusy(false)
+    if (error) {
+      console.error('Order status could not be updated:', error)
+      setOrderActionStatus(
+        language === 'tr' ? 'Sipariş durumu güncellenemedi.' : 'Order status could not be updated.'
+      )
+      return
+    }
+
+    setSelectedOrder(data)
+    setOrders((current) => current.map((order) => (order.id === data.id ? data : order)))
+    setOrderActionStatus(
+      language === 'tr' ? 'Sipariş durumu güncellendi.' : 'Order status updated.'
+    )
+  }
+
   const handleKitChange = (event) => {
     const { name, value } = event.target
     setKitForm((current) => ({ ...current, [name]: value }))
@@ -437,14 +535,26 @@ const updateSellerApplication = async (application, nextStatus) => {
 
   const toggleSupportStatus = async (request) => {
     const newStatus = request.status === 'resolved' ? 'open' : 'resolved'
-    const { data } = await supabase
+    setSupportActionStatus('')
+    const { data, error } = await supabase
       .from('support_requests')
       .update({ status: newStatus })
       .eq('id', request.id)
       .select()
 
-    if (data) {
+    if (error) {
+      console.error('Support request could not be updated:', error)
+      setSupportActionStatus(
+        language === 'tr' ? 'Destek talebi güncellenemedi.' : 'Support request could not be updated.'
+      )
+      return
+    }
+
+    if (data?.[0]) {
       setSupportRequests((current) => current.map((r) => (r.id === request.id ? data[0] : r)))
+      setSupportActionStatus(
+        language === 'tr' ? 'Destek talebi güncellendi.' : 'Support request updated.'
+      )
     }
   }
 
@@ -671,6 +781,7 @@ const updateSellerApplication = async (application, nextStatus) => {
               exit={{ opacity: 0, y: -12 }}
               transition={{ duration: 0.25 }}
             >
+              {supportActionStatus && <p className="panel-status">{supportActionStatus}</p>}
               {supportRequests.length === 0 ? (
                 <p className="panel-empty">{t.noSupport}</p>
               ) : (
@@ -718,11 +829,74 @@ const updateSellerApplication = async (application, nextStatus) => {
                         </p>
                         <span>{new Date(order.created_at).toLocaleDateString(dateLocale)}</span>
                       </div>
-                      <span className="admin-total">
-                        {t.total}: £{Number(order.total).toFixed(2)}
-                      </span>
+                      <div className="admin-order-row-actions">
+                        <span className="admin-total">
+                          {t.total}: £{Number(order.total).toFixed(2)}
+                        </span>
+                        <button type="button" className="admin-member-toggle" onClick={() => openOrderDetails(order)}>
+                          {language === 'tr' ? 'Sipariş ayrıntısı' : 'Order details'}
+                        </button>
+                      </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {selectedOrder && (
+                <div className="admin-detail-overlay" role="presentation" onMouseDown={() => setSelectedOrder(null)}>
+                  <section className="admin-detail-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+                    <button type="button" className="admin-detail-close" onClick={() => setSelectedOrder(null)} aria-label={language === 'tr' ? 'Kapat' : 'Close'}>×</button>
+                    <span className="admin-detail-eyebrow">{language === 'tr' ? 'Sipariş yönetimi' : 'Order management'}</span>
+                    <h3>{language === 'tr' ? 'Sipariş' : 'Order'} #{getOrderCode(selectedOrder)}</h3>
+
+                    <div className="admin-detail-summary">
+                      <p><strong>{language === 'tr' ? 'Müşteri' : 'Customer'}:</strong> {selectedOrder.full_name || selectedOrder.user_email || selectedOrder.user_id}</p>
+                      <p><strong>{language === 'tr' ? 'Adres' : 'Address'}:</strong> {selectedOrder.address || '—'}</p>
+                      <p><strong>{language === 'tr' ? 'Tarih' : 'Date'}:</strong> {new Date(selectedOrder.created_at).toLocaleString(dateLocale)}</p>
+                      <p><strong>{t.total}:</strong> £{Number(selectedOrder.total || 0).toFixed(2)}</p>
+                    </div>
+
+                    <label className="admin-detail-field">
+                      <span>{language === 'tr' ? 'Sipariş durumu' : 'Order status'}</span>
+                      <select value={selectedOrder.status || 'received'} disabled={orderStatusBusy} onChange={(event) => updateOrderStatus(event.target.value)}>
+                        <option value="received">{language === 'tr' ? 'Sipariş alındı' : 'Received'}</option>
+                        <option value="preparing">{language === 'tr' ? 'Hazırlanıyor' : 'Preparing'}</option>
+                        <option value="shipped">{language === 'tr' ? 'Kargoya verildi' : 'Shipped'}</option>
+                        <option value="delivered">{language === 'tr' ? 'Teslim edildi' : 'Delivered'}</option>
+                      </select>
+                    </label>
+                    {orderActionStatus && <p className="panel-status">{orderActionStatus}</p>}
+
+                    <h4>{language === 'tr' ? 'Ürünler' : 'Items'}</h4>
+                    {orderDetailLoading ? (
+                      <p className="panel-empty">{language === 'tr' ? 'Yükleniyor...' : 'Loading...'}</p>
+                    ) : selectedOrderItems.length === 0 ? (
+                      <div className="admin-detail-items">
+                        {(selectedOrder.items || []).map((item, index) => (
+                          <div className="admin-detail-item" key={`${item.id || item.name}-${index}`}>
+                            <strong>{item.name}</strong>
+                            <span>{item.quantity} × £{Number(item.price || 0).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="admin-detail-items">
+                        {selectedOrderItems.map((item) => (
+                          <div className="admin-detail-item" key={item.id}>
+                            <div>
+                              <strong>{item.product_title}</strong>
+                              <span>{item.product_type} · {item.quantity} × £{Number(item.unit_price || 0).toFixed(2)}</span>
+                            </div>
+                            <div className="admin-detail-money">
+                              <span>{language === 'tr' ? 'Satır toplamı' : 'Line total'}: £{Number(item.line_total || 0).toFixed(2)}</span>
+                              <span>{language === 'tr' ? 'Admin' : 'Admin'}: £{Number(item.admin_amount || 0).toFixed(2)}</span>
+                              <span>{language === 'tr' ? 'Satıcı' : 'Seller'}: £{Number(item.seller_amount || 0).toFixed(2)}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
                 </div>
               )}
             </motion.div>
@@ -1049,6 +1223,9 @@ const updateSellerApplication = async (application, nextStatus) => {
                         <small>
                           {member.order_count || 0} {t.memberOrders} · {member.booking_count || 0} {t.memberBookings}
                         </small>
+                        <button type="button" className="admin-member-profile-button" onClick={() => openMemberDetails(member)}>
+                          {language === 'tr' ? 'Profili görüntüle' : 'View profile'}
+                        </button>
                       </div>
                       {!member.is_owner && (
                         <div className="admin-member-actions">
@@ -1072,6 +1249,69 @@ const updateSellerApplication = async (application, nextStatus) => {
                       )}
                     </article>
                   ))}
+                </div>
+              )}
+
+              {selectedMember && (
+                <div className="admin-detail-overlay" role="presentation" onMouseDown={() => setSelectedMember(null)}>
+                  <section className="admin-detail-modal admin-member-detail-modal" role="dialog" aria-modal="true" onMouseDown={(event) => event.stopPropagation()}>
+                    <button type="button" className="admin-detail-close" onClick={() => setSelectedMember(null)} aria-label={language === 'tr' ? 'Kapat' : 'Close'}>×</button>
+                    <span className="admin-detail-eyebrow">{language === 'tr' ? 'Üye profili' : 'Member profile'}</span>
+                    <h3>{selectedMember.full_name || selectedMember.email}</h3>
+                    <p>{selectedMember.email}</p>
+
+                    {memberDetailLoading ? (
+                      <p className="panel-empty">{language === 'tr' ? 'Üye bilgileri yükleniyor...' : 'Loading member details...'}</p>
+                    ) : memberDetailStatus ? (
+                      <p className="panel-status">{memberDetailStatus}</p>
+                    ) : (
+                      <>
+                        <div className="admin-detail-summary">
+                          <p><strong>{language === 'tr' ? 'Ad soyad' : 'Full name'}:</strong> {memberProfile?.full_name || selectedMember.full_name || '—'}</p>
+                          <p><strong>{language === 'tr' ? 'Teslimat adresi' : 'Delivery address'}:</strong> {memberProfile?.address || '—'}</p>
+                          <p><strong>{language === 'tr' ? 'Hesap durumu' : 'Account status'}:</strong> {selectedMember.is_disabled ? t.memberDisabled : t.memberActive}</p>
+                          <p><strong>{language === 'tr' ? 'Kayıt tarihi' : 'Registration date'}:</strong> {selectedMember.created_at ? new Date(selectedMember.created_at).toLocaleDateString(dateLocale) : '—'}</p>
+                        </div>
+
+                        <h4>{language === 'tr' ? 'Sipariş geçmişi' : 'Order history'} ({memberOrders.length})</h4>
+                        {memberOrders.length === 0 ? (
+                          <p className="panel-empty">{t.noOrders}</p>
+                        ) : (
+                          <div className="admin-detail-items">
+                            {memberOrders.map((order) => (
+                              <button
+                                type="button"
+                                className="admin-detail-item admin-detail-item-button"
+                                key={order.id}
+                                onClick={() => {
+                                  setSelectedMember(null)
+                                  openOrderDetails(order)
+                                  setView('orders')
+                                }}
+                              >
+                                <strong>#{getOrderCode(order)}</strong>
+                                <span>{new Date(order.created_at).toLocaleDateString(dateLocale)} · £{Number(order.total || 0).toFixed(2)}</span>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        <h4>{language === 'tr' ? 'Atölye kayıtları' : 'Workshop registrations'} ({memberBookings.length})</h4>
+                        {memberBookings.length === 0 ? (
+                          <p className="panel-empty">{language === 'tr' ? 'Atölye kaydı yok.' : 'No workshop registrations.'}</p>
+                        ) : (
+                          <div className="admin-detail-items">
+                            {memberBookings.map((booking) => (
+                              <div className="admin-detail-item" key={booking.id}>
+                                <strong>{booking.event_label}</strong>
+                                <span>{new Date(booking.created_at).toLocaleDateString(dateLocale)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </section>
                 </div>
               )}
             </motion.div>

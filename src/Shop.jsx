@@ -524,15 +524,15 @@ const [checkoutError, setCheckoutError] = useState('')
       name: item.eventLabel,
       price: item.price,
       quantity: item.people,
-    }))).concat(makerCartItems.map((item) => ({
-      type: 'secondhand',
-      id: item.id,
-      name: item.title,
-      price: Number(item.price),
-      quantity: item.quantity,
-      seller_id: item.seller_id || null,
-      commission_rate: Number(item.commission_rate || 15),
-    })))
+   }))).concat(makerCartItems.map((item) => ({
+  type: item._showcase ? 'showcase' : 'secondhand',
+  id: item.id,
+  name: item.title,
+  price: Number(item.price),
+  quantity: item.quantity,
+  seller_id: item.seller_id || null,
+  commission_rate: Number(item.commission_rate || 15),
+})))
 
     const orderPayload = {
       user_id: session.user.id,

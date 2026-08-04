@@ -67,6 +67,18 @@ const [newPassword, setNewPassword] = useState('')
 
 const [authMessage, setAuthMessage] = useState('')
 const [showScrollTop, setShowScrollTop] = useState(false)
+const [privateWorkshopOpen, setPrivateWorkshopOpen] = useState(false)
+const [privateWorkshopStatus, setPrivateWorkshopStatus] = useState('')
+const [privateWorkshopSubmitting, setPrivateWorkshopSubmitting] = useState(false)
+const [privateWorkshopForm, setPrivateWorkshopForm] = useState({
+  full_name: '',
+  email: '',
+  phone: '',
+  requested_date: '',
+  requested_time: '',
+  guest_count: '1',
+  message: '',
+})
 
 useEffect(() => {
   const handleScroll = () => setShowScrollTop(window.scrollY > 500)
@@ -75,6 +87,78 @@ useEffect(() => {
   window.addEventListener('scroll', handleScroll, { passive: true })
   return () => window.removeEventListener('scroll', handleScroll)
 }, [])
+
+useEffect(() => {
+  const recordVisit = async () => {
+    const today = new Date().toISOString().slice(0, 10)
+    const recordedDate = localStorage.getItem('tgw-visit-recorded-date')
+    if (recordedDate === today) return
+
+    let visitorKey = localStorage.getItem('tgw-visitor-key')
+    if (!visitorKey) {
+      visitorKey = globalThis.crypto?.randomUUID?.() || `visitor-${Date.now()}`
+      localStorage.setItem('tgw-visitor-key', visitorKey)
+    }
+
+    const { error } = await supabase.from('site_visits').insert({
+      visitor_key: visitorKey,
+      user_id: session?.user?.id || null,
+      path: location.pathname || '/',
+    })
+
+    if (!error) localStorage.setItem('tgw-visit-recorded-date', today)
+  }
+
+  if (sessionChecked) recordVisit()
+}, [sessionChecked, session?.user?.id, location.pathname])
+
+const openPrivateWorkshopForm = () => {
+  setPrivateWorkshopStatus('')
+  setPrivateWorkshopForm((current) => ({
+    ...current,
+    full_name: current.full_name || profileData.full_name || '',
+    email: current.email || session?.user?.email || '',
+  }))
+  setPrivateWorkshopOpen(true)
+}
+
+const handlePrivateWorkshopChange = (event) => {
+  const { name, value } = event.target
+  setPrivateWorkshopForm((current) => ({ ...current, [name]: value }))
+}
+
+const submitPrivateWorkshopRequest = async (event) => {
+  event.preventDefault()
+  setPrivateWorkshopSubmitting(true)
+  setPrivateWorkshopStatus('')
+
+  const { error } = await supabase.from('private_workshop_requests').insert({
+    user_id: session?.user?.id || null,
+    full_name: privateWorkshopForm.full_name.trim(),
+    email: privateWorkshopForm.email.trim(),
+    phone: privateWorkshopForm.phone.trim(),
+    requested_date: privateWorkshopForm.requested_date,
+    requested_time: privateWorkshopForm.requested_time,
+    guest_count: Number(privateWorkshopForm.guest_count),
+    message: privateWorkshopForm.message.trim() || null,
+  })
+
+  setPrivateWorkshopSubmitting(false)
+  if (error) {
+    setPrivateWorkshopStatus(
+      language === 'tr'
+        ? 'Talep gönderilemedi. Lütfen tekrar dene.'
+        : 'Your request could not be sent. Please try again.'
+    )
+    return
+  }
+
+  setPrivateWorkshopStatus(
+    language === 'tr'
+      ? 'Talebin yöneticiye iletildi. Sonucu hesabından takip edebilirsin.'
+      : 'Your request was sent to the studio. You can follow its status in your account.'
+  )
+}
 
 
 const loadPanelData = async (currentSession) => {
@@ -1546,6 +1630,8 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
             </p>
             <motion.button
               className="private-button"
+              type="button"
+              onClick={openPrivateWorkshopForm}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.96 }}
             >
@@ -1638,6 +1724,64 @@ transition={{ duration: 0.8, ease: 'easeOut' }}        >
 )}
 </AnimatePresence>
 </main>
+<AnimatePresence>
+  {privateWorkshopOpen && (
+    <motion.div
+      className="private-workshop-overlay"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) setPrivateWorkshopOpen(false)
+      }}
+    >
+      <motion.div
+        className="private-workshop-modal"
+        initial={{ opacity: 0, y: 24, scale: 0.96 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 18, scale: 0.97 }}
+      >
+        <button
+          type="button"
+          className="private-workshop-close"
+          onClick={() => setPrivateWorkshopOpen(false)}
+          aria-label={language === 'tr' ? 'Kapat' : 'Close'}
+        >
+          ×
+        </button>
+        <span className="private-workshop-eyebrow">
+          {language === 'tr' ? 'ÖZEL ATÖLYE' : 'PRIVATE WORKSHOP'}
+        </span>
+        <h2>{language === 'tr' ? 'Özel randevu talebi oluştur' : 'Request a private workshop'}</h2>
+        <p>
+          {language === 'tr'
+            ? 'Tercih ettiğin tarih ve bilgileri gönder. Atölye ekibi talebini inceleyip kesin tarihi belirlesin.'
+            : 'Send your preferred date and details. The studio will review your request and confirm the final schedule.'}
+        </p>
+
+        <form className="private-workshop-form" onSubmit={submitPrivateWorkshopRequest}>
+          <div className="private-workshop-form-row">
+            <input name="full_name" placeholder={language === 'tr' ? 'Ad soyad' : 'Full name'} value={privateWorkshopForm.full_name} onChange={handlePrivateWorkshopChange} required />
+            <input name="email" type="email" placeholder={language === 'tr' ? 'E-posta' : 'Email'} value={privateWorkshopForm.email} onChange={handlePrivateWorkshopChange} required />
+          </div>
+          <input name="phone" placeholder={language === 'tr' ? 'Telefon' : 'Phone'} value={privateWorkshopForm.phone} onChange={handlePrivateWorkshopChange} required />
+          <div className="private-workshop-form-row">
+            <input name="requested_date" type="date" min={new Date().toISOString().slice(0, 10)} value={privateWorkshopForm.requested_date} onChange={handlePrivateWorkshopChange} required />
+            <input name="requested_time" type="time" value={privateWorkshopForm.requested_time} onChange={handlePrivateWorkshopChange} required />
+            <input name="guest_count" type="number" min="1" max="30" placeholder={language === 'tr' ? 'Kişi' : 'Guests'} value={privateWorkshopForm.guest_count} onChange={handlePrivateWorkshopChange} required />
+          </div>
+          <textarea name="message" placeholder={language === 'tr' ? 'Mesajın veya özel isteğin' : 'Message or special request'} value={privateWorkshopForm.message} onChange={handlePrivateWorkshopChange} rows="4" />
+          <button type="submit" disabled={privateWorkshopSubmitting}>
+            {privateWorkshopSubmitting
+              ? language === 'tr' ? 'Gönderiliyor...' : 'Sending...'
+              : language === 'tr' ? 'Talebi gönder' : 'Send request'}
+          </button>
+          {privateWorkshopStatus && <p className="private-workshop-status">{privateWorkshopStatus}</p>}
+        </form>
+      </motion.div>
+    </motion.div>
+  )}
+</AnimatePresence>
 <footer className="footer global-footer">
   <div>
     <strong>The Glass Worlds</strong>

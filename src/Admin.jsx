@@ -183,6 +183,10 @@ const [applicationStatus, setApplicationStatus] = useState('')
   const [sessions, setSessions] = useState([])
   const [sessionForm, setSessionForm] = useState({ session_date: '', attendee_count: '', note: '' })
   const [sessionStatus, setSessionStatus] = useState('')
+  const [privateWorkshopRequests, setPrivateWorkshopRequests] = useState([])
+  const [privateWorkshopStatus, setPrivateWorkshopStatus] = useState('')
+  const [privateWorkshopBusy, setPrivateWorkshopBusy] = useState('')
+  const [siteVisits, setSiteVisits] = useState([])
 
   const loadAdminData = async () => {
    const [
@@ -193,6 +197,8 @@ const [applicationStatus, setApplicationStatus] = useState('')
   orderItemsRes,
   sessionsRes,
   sellerApplicationsRes,
+  privateWorkshopRes,
+  siteVisitsRes,
 ] = await Promise.all([
       supabase.from('kits').select('*').order('id'),
       supabase.from('messages').select('id, name, email, message, created_at').order('created_at', { ascending: false }),
@@ -206,6 +212,14 @@ const [applicationStatus, setApplicationStatus] = useState('')
   .from('secondhand_globes')
   .select('*')
   .order('created_at', { ascending: false }),
+      supabase
+        .from('private_workshop_requests')
+        .select('*')
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('site_visits')
+        .select('visitor_key, visited_at')
+        .order('visited_at', { ascending: false }),
     ])
 
     if (kitsRes.data) setKits(kitsRes.data)
@@ -217,6 +231,8 @@ const [applicationStatus, setApplicationStatus] = useState('')
       if (sellerApplicationsRes.data) {
   setSellerApplications(sellerApplicationsRes.data)
 }
+    if (privateWorkshopRes.data) setPrivateWorkshopRequests(privateWorkshopRes.data)
+    if (siteVisitsRes.data) setSiteVisits(siteVisitsRes.data)
 
     const startOfMonth = new Date()
     startOfMonth.setDate(1)
@@ -228,6 +244,42 @@ const [applicationStatus, setApplicationStatus] = useState('')
       .gte('created_at', startOfMonth.toISOString())
 
     setNewMembersCount(count || 0)
+  }
+
+  const changePrivateWorkshopField = (id, field, value) => {
+    setPrivateWorkshopRequests((current) => current.map((request) => (
+      request.id === id ? { ...request, [field]: value } : request
+    )))
+  }
+
+  const updatePrivateWorkshopRequest = async (request, status) => {
+    setPrivateWorkshopBusy(request.id)
+    setPrivateWorkshopStatus('')
+
+    const confirmedDate = request.confirmed_date || request.requested_date
+    const confirmedTime = request.confirmed_time || request.requested_time
+    const { data, error } = await supabase
+      .from('private_workshop_requests')
+      .update({
+        status,
+        confirmed_date: status === 'approved' ? confirmedDate : null,
+        confirmed_time: status === 'approved' ? confirmedTime : null,
+        admin_note: request.admin_note || null,
+      })
+      .eq('id', request.id)
+      .select()
+      .single()
+
+    setPrivateWorkshopBusy('')
+    if (error) {
+      setPrivateWorkshopStatus(language === 'tr' ? 'Talep güncellenemedi.' : 'The request could not be updated.')
+      return
+    }
+
+    setPrivateWorkshopRequests((current) => current.map((item) => (
+      item.id === request.id ? data : item
+    )))
+    setPrivateWorkshopStatus(language === 'tr' ? 'Özel randevu talebi güncellendi.' : 'Private workshop request updated.')
   }
 const updateSellerApplication = async (application, nextStatus) => {
   const actionText =
@@ -431,6 +483,23 @@ const updateSellerApplication = async (application, nextStatus) => {
       return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()
     })
     .reduce((sum, s) => sum + (s.attendee_count || 0), 0)
+
+  const todayKey = now.toISOString().slice(0, 10)
+  const monthKey = todayKey.slice(0, 7)
+  const visitorsToday = new Set(
+    siteVisits
+      .filter((visit) => String(visit.visited_at || '').slice(0, 10) === todayKey)
+      .map((visit) => visit.visitor_key)
+  ).size
+  const visitorsThisMonth = new Set(
+    siteVisits
+      .filter((visit) => String(visit.visited_at || '').slice(0, 7) === monthKey)
+      .map((visit) => visit.visitor_key)
+  ).size
+  const totalVisitors = new Set(siteVisits.map((visit) => visit.visitor_key)).size
+  const pendingPrivateWorkshopCount = privateWorkshopRequests.filter(
+    (request) => request.status === 'pending'
+  ).length
 
   return (
     <section className="admin-page">
@@ -1018,6 +1087,18 @@ const updateSellerApplication = async (application, nextStatus) => {
             >
               <div className="admin-stats-grid">
                 <div className="admin-stat-card">
+                  <span>{language === 'tr' ? 'Bugünkü ziyaretçi' : "Today's visitors"}</span>
+                  <strong>{visitorsToday}</strong>
+                </div>
+                <div className="admin-stat-card">
+                  <span>{language === 'tr' ? 'Bu ay ziyaretçi' : 'Visitors this month'}</span>
+                  <strong>{visitorsThisMonth}</strong>
+                </div>
+                <div className="admin-stat-card">
+                  <span>{language === 'tr' ? 'Toplam ziyaretçi' : 'Total visitors'}</span>
+                  <strong>{totalVisitors}</strong>
+                </div>
+                <div className="admin-stat-card">
                   <span>{t.newMembersTitle}</span>
                   <strong>{newMembersCount}</strong>
                 </div>
@@ -1025,7 +1106,101 @@ const updateSellerApplication = async (application, nextStatus) => {
                   <span>{t.totalThisMonth}</span>
                   <strong>{attendanceThisMonth}</strong>
                 </div>
+                <div className="admin-stat-card">
+                  <span>{language === 'tr' ? 'Bekleyen özel randevu' : 'Pending private workshops'}</span>
+                  <strong>{pendingPrivateWorkshopCount}</strong>
+                </div>
               </div>
+
+              <section className="admin-private-workshops">
+                <div className="admin-members-heading">
+                  <div>
+                    <h3>{language === 'tr' ? 'Özel atölye talepleri' : 'Private workshop requests'}</h3>
+                    <p>{language === 'tr' ? 'Tarihi düzenleyip talebi onaylayabilir veya reddedebilirsin.' : 'Set the date, then approve or reject each request.'}</p>
+                  </div>
+                  <span className="admin-member-count">{privateWorkshopRequests.length}</span>
+                </div>
+
+                {privateWorkshopStatus && <p className="panel-status">{privateWorkshopStatus}</p>}
+
+                {privateWorkshopRequests.length === 0 ? (
+                  <p className="panel-empty">{language === 'tr' ? 'Henüz özel atölye talebi yok.' : 'No private workshop requests yet.'}</p>
+                ) : (
+                  <div className="admin-private-workshop-list">
+                    {privateWorkshopRequests.map((request) => (
+                      <article className={`admin-private-workshop-card status-${request.status || 'pending'}`} key={request.id}>
+                        <div className="admin-private-workshop-summary">
+                          <div>
+                            <strong>{request.full_name}</strong>
+                            <p>{request.email}{request.phone ? ` · ${request.phone}` : ''}</p>
+                          </div>
+                          <span className={`admin-private-workshop-status ${request.status || 'pending'}`}>
+                            {request.status === 'approved'
+                              ? (language === 'tr' ? 'Onaylandı' : 'Approved')
+                              : request.status === 'rejected'
+                                ? (language === 'tr' ? 'Reddedildi' : 'Rejected')
+                                : (language === 'tr' ? 'Onay bekliyor' : 'Pending')}
+                          </span>
+                        </div>
+
+                        <div className="admin-private-workshop-info">
+                          <span>{language === 'tr' ? 'İstenen tarih' : 'Requested date'}: <strong>{request.requested_date || '—'} {request.requested_time || ''}</strong></span>
+                          <span>{language === 'tr' ? 'Kişi sayısı' : 'Guests'}: <strong>{request.guest_count || '—'}</strong></span>
+                        </div>
+
+                        {request.message && <p className="admin-message">{request.message}</p>}
+
+                        <div className="admin-private-workshop-fields">
+                          <label>
+                            <span>{language === 'tr' ? 'Onaylanacak tarih' : 'Confirmed date'}</span>
+                            <input
+                              type="date"
+                              value={request.confirmed_date || request.requested_date || ''}
+                              onChange={(event) => changePrivateWorkshopField(request.id, 'confirmed_date', event.target.value)}
+                            />
+                          </label>
+                          <label>
+                            <span>{language === 'tr' ? 'Saat' : 'Time'}</span>
+                            <input
+                              type="time"
+                              value={request.confirmed_time || request.requested_time || ''}
+                              onChange={(event) => changePrivateWorkshopField(request.id, 'confirmed_time', event.target.value)}
+                            />
+                          </label>
+                          <label className="admin-private-workshop-note">
+                            <span>{language === 'tr' ? 'Yönetici notu' : 'Admin note'}</span>
+                            <input
+                              type="text"
+                              value={request.admin_note || ''}
+                              placeholder={language === 'tr' ? 'Kullanıcıya gösterilecek not' : 'Note shown to the user'}
+                              onChange={(event) => changePrivateWorkshopField(request.id, 'admin_note', event.target.value)}
+                            />
+                          </label>
+                        </div>
+
+                        <div className="admin-private-workshop-actions">
+                          <button
+                            type="button"
+                            className="admin-member-delete"
+                            disabled={privateWorkshopBusy === request.id}
+                            onClick={() => updatePrivateWorkshopRequest(request, 'rejected')}
+                          >
+                            {language === 'tr' ? 'Reddet' : 'Reject'}
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-member-toggle"
+                            disabled={privateWorkshopBusy === request.id}
+                            onClick={() => updatePrivateWorkshopRequest(request, 'approved')}
+                          >
+                            {language === 'tr' ? 'Tarihi onayla' : 'Approve date'}
+                          </button>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                )}
+              </section>
 
               <form className="admin-form" onSubmit={submitSession}>
                 <h3>{t.workshopTitle}</h3>

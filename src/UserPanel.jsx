@@ -18,6 +18,8 @@ const copy = {
     save: 'Save details',
     visits: 'Workshop registrations',
     visitsEmpty: 'Your workshop registrations will appear here.',
+    privateWorkshops: 'Private workshop requests',
+    privateWorkshopsEmpty: 'You have not submitted a private workshop request yet.',
     orders: 'Order history',
     ordersEmpty: 'You have not bought anything yet.',
     applications: 'My seller applications',
@@ -56,6 +58,8 @@ sellerEarning: 'Your estimated earnings',
     save: 'Bilgileri kaydet',
     visits: 'Etkinlik kayıtlarım',
     visitsEmpty: 'Etkinlik kayıtların burada görünecek.',
+    privateWorkshops: 'Özel atölye taleplerim',
+    privateWorkshopsEmpty: 'Henüz özel atölye talebin yok.',
     orders: 'Sipariş özetim',
     ordersEmpty: 'Henüz bir alışverişin yok.',
     applications: 'Satış başvurularım',
@@ -122,6 +126,7 @@ function UserPanel({
     return `TGW-${datePart}-${String(order.id).padStart(4, '0')}`
   }
   const [bookings, setBookings] = useState([])
+  const [privateWorkshopRequests, setPrivateWorkshopRequests] = useState([])
   const [sellerApplications, setSellerApplications] = useState([])
   const [sellerOrderItems, setSellerOrderItems] = useState([])
   const [expandedTracking, setExpandedTracking] = useState(null)
@@ -148,7 +153,7 @@ function UserPanel({
 
  useEffect(() => {
   const loadPanelData = async () => {
-    const [bookingsResult, applicationsResult, salesResult] = await Promise.all([
+    const [bookingsResult, applicationsResult, salesResult, privateWorkshopResult] = await Promise.all([
       supabase
         .from('event_rsvps')
         .select('id, event_label, created_at')
@@ -167,11 +172,18 @@ function UserPanel({
         .from('order_items')
         .select('id, product_id, quantity, line_total, admin_amount, seller_amount')
         .eq('seller_id', session.user.id),
+
+      supabase
+        .from('private_workshop_requests')
+        .select('id, requested_date, requested_time, guest_count, message, status, confirmed_date, confirmed_time, admin_note, created_at')
+        .or(`user_id.eq.${session.user.id},email.eq.${session.user.email}`)
+        .order('created_at', { ascending: false }),
     ])
 
     setBookings(bookingsResult.data || [])
     setSellerApplications(applicationsResult.data || [])
     setSellerOrderItems(salesResult.data || [])
+    setPrivateWorkshopRequests(privateWorkshopResult.data || [])
   }
 
   loadPanelData()
@@ -301,6 +313,48 @@ function UserPanel({
               ))}
             </ul>
           )}
+
+          <div className="account-private-workshops">
+            <div className="account-card-heading account-private-workshops-heading">
+              <h2>{t.privateWorkshops}</h2>
+              <span>{privateWorkshopRequests.length}</span>
+            </div>
+            {privateWorkshopRequests.length === 0 ? (
+              <p className="account-empty">{t.privateWorkshopsEmpty}</p>
+            ) : (
+              <div className="account-private-workshop-list">
+                {privateWorkshopRequests.map((request) => {
+                  const status = request.status || 'pending'
+                  const statusLabel = status === 'approved'
+                    ? (language === 'tr' ? 'Onaylandı' : 'Approved')
+                    : status === 'rejected'
+                      ? (language === 'tr' ? 'Reddedildi' : 'Rejected')
+                      : (language === 'tr' ? 'Onay bekliyor' : 'Pending')
+                  const shownDate = status === 'approved' ? (request.confirmed_date || request.requested_date) : request.requested_date
+                  const shownTime = status === 'approved' ? (request.confirmed_time || request.requested_time) : request.requested_time
+
+                  return (
+                    <article className={`account-private-workshop status-${status}`} key={request.id}>
+                      <div className="account-private-workshop-top">
+                        <div>
+                          <strong>{language === 'tr' ? 'Özel kar küresi atölyesi' : 'Private snow globe workshop'}</strong>
+                          <span>{shownDate || '—'} {shownTime || ''}</span>
+                        </div>
+                        <em className={`account-private-workshop-status ${status}`}>{statusLabel}</em>
+                      </div>
+                      <p>{language === 'tr' ? 'Kişi sayısı' : 'Guests'}: {request.guest_count || '—'}</p>
+                      {request.message && <p>{request.message}</p>}
+                      {request.admin_note && (
+                        <p className="account-private-workshop-note">
+                          <strong>{language === 'tr' ? 'Atölye notu:' : 'Studio note:'}</strong> {request.admin_note}
+                        </p>
+                      )}
+                    </article>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </section>}
 
         {activeSection === 'orders' && <section className="account-card account-orders account-page-card" id="account-orders">
